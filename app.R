@@ -2,6 +2,7 @@ library(shiny)
 library(MASS) # For mvrnorm
 library(ggplot2) # For plots
 library(sommer)
+library(data.table)
 
 # UI
 ui <- fluidPage(
