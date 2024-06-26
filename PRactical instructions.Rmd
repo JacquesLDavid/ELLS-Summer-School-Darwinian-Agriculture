@@ -1,6 +1,6 @@
 ---
-title: "Practical simulation of social evolution under massal selection - 2024 ELLS summer school Darwinian agriculture"
-author: "J David"
+title: "Practical simulation of social evolution under mass selection or under true values - 2024 ELLS summer school Darwinian agriculture"
+author: "Jacques David, Nicolas Salas and other..."
 date: "2024-06-20"
 output:
   pdf_document: default
@@ -10,30 +10,32 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-### Practical Session on Phenotypic Value Decomposition and Selection Effects
+# Practical Session on Phenotypic Value Decomposition and Selection Effects
 
-#### Introduction
+# Introduction
 Welcome to this practical session on the decomposition of phenotypic value and the effects of selection. In this session, we will explore how the phenotypic value of a plant is influenced by its genotype and the genotypes of its neighbors, and how selection on these traits affects the next generation.
 
-#### Key Concepts
+# Key Concepts
 
-##### Decomposition of Phenotypic Value
-The phenotypic value (\(P\)) of an individual can be decomposed into multiple components:
-\[ P = G + E \]
+## Decomposition of Phenotypic Value
+Classically, The phenotypic value ($P$) of an individual can be decomposed into multiple components:
+$$ P = G + E $$
 Where:
-- **\(G\)** represents the genetic contribution to the phenotype.
-- **\(E\)** represents the environmental contribution to the phenotype.
+- **G** represents the genetic contribution to the phenotype.
+- **E** represents the environmental contribution to the phenotype.
 
-When considering the direct genetic effect (DGE) and the indirect genetic effect (IGE) from neighboring individuals, the model becomes:
-\[ P = DGE + IGE + E_DGE + E_IGE\]
+If we introduce the fact that the phenotype of an individual can be determined by its own genotype and by the genotypes of its neighbours, G can be decomposed into a *D*irect *G*enetic *E*ffect ($DGE$) and the $I*ndirect *G*enetic *E*ffect (IGE) from neighboring individuals, the model becomes:
+$$P = DGE + IGE + E_{DGE} + E_{IGE}$$
 Where:
 - **DGE (Direct Genetic Effect)**: The contribution of the individual's own genotype to its phenotype.
-- **IGE (Indirect Genetic Effect)**: The contribution of the genotypes of neighboring individuals to the individual's phenotype.
-- **E_DGE**  (environment effect on Direct Genetic Effect)
-- **E_IGE**  (environment effect on Indirect Genetic Effect)
+- **IGE (Indirect Genetic Effect)**: The contribution of the genotypes of neighboring individuals to the individual's phenotype.  
 
+- $E_{DGE}$  (environment effect on Direct Genetic Effect)
+- $E_{IGE}$  (environment effect on Indirect Genetic Effect)
 
-##### Correlation between DGE and IGE
+These components have their associated variances : $V_{DGE},V_{DGE}, V_{E_{DGE}}, V_{E_{IGE}}$
+
+## Correlation between DGE and IGE
 The DGE and IGE can be correlated. This correlation affects the overall response to selection. If a mass selection is performed based on phenotypic value, the selection acts on both the individual's genotype and the genotypes of its neighbors, a concept known as the social phenotype.
 
 ##### True Breeding Value (TBV)
