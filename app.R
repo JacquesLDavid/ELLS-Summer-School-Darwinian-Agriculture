@@ -8,7 +8,9 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       actionButton("goButton", "Run Simulation"),
-      sliderInput("N", "Number of individuals (N)", min = 10, max = 100, value = 20),
+      sliderInput("N", "Number of genotypes (N)", min = 10, max = 100, value = 20),
+      sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 20, value = 5),
+      
       numericInput("varG11", "Genetic variance DGE", value = 0.75),
       numericInput("varG22", "Genetic variance IGE", value = 0.07),
       sliderInput("r", "Genetic correlation DGE : IGE", min = -1, max = 1, value = 0, step = 0.1),
@@ -35,6 +37,17 @@ server <- function(input, output) {
       set.seed(input$seedValue)
     }
     
+    
+    # G <- matrix(c(0.7, -0.15, -0.15, 0.3), nrow = 2, byrow = TRUE)
+    # E <- matrix(c(0.7, 0,0, 0.07), nrow = 2, byrow = TRUE)
+    # N<-100
+    # rep <- 2
+    # r <- -0.5
+    # covdgE_IGE <-r* (G[1,1] * G[2,2] )^0.5
+    # G <- matrix(c(G[1,1], covdgE_IGE, covdgE_IGE, G[2,2]), nrow = 2, byrow = TRUE)
+
+    
+    
     # Prepare G and E matrices
     covdgE_IGE <- input$r * (input$varG11 * input$varG22)^0.5
     
@@ -42,15 +55,20 @@ server <- function(input, output) {
     E <- matrix(c(input$varE11, 0, 0, input$varE22), nrow = 2, byrow = TRUE)
     
     N <- input$N
-    sde <- input$sde
-    
+
     P <- G + E
     mu <- c(0, 0)
     
-    # Generate genotypes and neighborhoods
-    genotype <- mvrnorm(n = N^2, mu = mu, Sigma = G)
-    enviro <- mvrnorm(n = N^2, mu = mu, Sigma = E)
-    voisinage <- matrix(sample(1:N^2, 4*N^2, replace = TRUE), nrow = 2*N, ncol = 2*N)
+    # size of the square 
+    size <- rep*N + 5
+    
+    Enviro <- mvrnorm(n = size^2 , mu = mu, Sigma = E)
+    enviro_DGE <- matrix(Enviro[,1], nrow = size, ncol = size)
+    enviro_IGE <- matrix(Enviro[,2], nrow = size, ncol = size)
+    
+    # the realized number of rep per genotype is not compulsarily rep 
+    alea<-sample(1:N, size^2, replace = TRUE)
+    voisinage <- matrix(alea, nrow = size, ncol = size)
     
     # Load the necessary package for qnorm, dnorm and pnorm functions
     if(!requireNamespace("stats", quietly = TRUE)) install.packages("stats")
@@ -95,13 +113,15 @@ server <- function(input, output) {
     tri_geno <- c()
     cpt <- 0
     
-    for (x in c(5:(N+5))) {
-      for (y in c(5:(N+5))) {
+    for (x in c(3:(N*rep+3))) {
+      for (y in c(3:(N*rep+3))) {
         cpt <- cpt + 1
         Pheno[cpt] <- Valeur_G(x, y, genotype, voisinage)
         tri_geno[cpt] <- voisinage[x, y]
       }
     }
+    
+    length(Pheno)
     
     # Before selection
     
