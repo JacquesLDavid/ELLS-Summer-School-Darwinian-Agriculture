@@ -11,8 +11,8 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       actionButton("goButton", "Run Simulation"),
-      sliderInput("N", "Number of individuals (N)", min = 10, max = 500, value = 450),
-      sliderInput("rep", "Number of repetitions per genotypes (rep)", min = 2, max = 50, value = 50),
+      sliderInput("N", "Number of genotypes (N)", min = 10, max = 100, value = 20),
+      sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 20, value = 5),
       numericInput("varG11", "Genetic variance DGE", value = 0.75),
       numericInput("varG22", "Genetic variance IGE", value = 0.07),
       sliderInput("r", "Genetic correlation DGE : IGE", min = -1, max = 1, value = 0, step = 0.1),
@@ -38,7 +38,7 @@ server <- function(input, output) {
     if(input$setSeed) {
       set.seed(input$seedValue)
     }
-    
+
     V_env_DGE=1
     V_env_IGE=0
     V_geno=0.75
@@ -89,10 +89,10 @@ server <- function(input, output) {
         mat_grid[i+1,j+1]=données[(données$Row==i&données$Column==j),"Focal"]
       }
     }
-    #mat_grid[1,]=sample(données$Focal,length(mat_grid[1,]))
-    #mat_grid[sqrt(N_geno*N_rep)+2,]=sample(données$Focal,length(mat_grid[sqrt(N_geno*N_rep)+2,]))
-    #mat_grid[,1]=sample(données$Focal,length(mat_grid[,1]))
-    #mat_grid[,sqrt(N_geno*N_rep)+2]=sample(données$Focal,length(mat_grid[,sqrt(N_geno*N_rep)+2]))
+    mat_grid[1,]=sample(données$Focal,length(mat_grid[1,]))
+    mat_grid[sqrt(N_geno*N_rep)+2,]=sample(données$Focal,length(mat_grid[sqrt(N_geno*N_rep)+2,]))
+    mat_grid[,1]=sample(données$Focal,length(mat_grid[,1]))
+    mat_grid[,sqrt(N_geno*N_rep)+2]=sample(données$Focal,length(mat_grid[,sqrt(N_geno*N_rep)+2]))
     
     matrice_voisin=matrix(0,nrow = N_geno*N_rep,ncol=N_geno,dimnames = list(1:(N_geno*N_rep),unique(données$Focal)))
     données=cbind(matrice_voisin,données,data.frame("vide"=NA))
