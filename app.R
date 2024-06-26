@@ -1,6 +1,9 @@
 library(shiny)
 library(MASS) # For mvrnorm
 library(ggplot2) # For plots
+library(sommer)
+library(data.table)
+library(tidyverse)
 
 # UI
 ui <- fluidPage(
@@ -10,14 +13,13 @@ ui <- fluidPage(
       actionButton("goButton", "Run Simulation"),
       sliderInput("N", "Number of genotypes (N)", min = 10, max = 100, value = 20),
       sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 20, value = 5),
-      
       numericInput("varG11", "Genetic variance DGE", value = 0.75),
       numericInput("varG22", "Genetic variance IGE", value = 0.07),
       sliderInput("r", "Genetic correlation DGE : IGE", min = -1, max = 1, value = 0, step = 0.1),
       numericInput("varE11", "Environmental variance DGE", value = 0.7),
       numericInput("varE22", "Environmental variance IGE", value = 0.07),
       sliderInput("p", "Selection pressure", min = 0.01, max = 1, value = 0.5, step = 0.1),          
-      
+      sliderInput("b_DGE", "Index weight for DGE (weight for IGE = 1 - weight for DGE)", min = 0, max = 1, value = 0.5, step = 0.1),
       checkboxInput("setSeed", "Set seed for reproducibility", value = FALSE),
       numericInput("seedValue", "Seed value", value = 12345)
     ),
@@ -36,165 +38,174 @@ server <- function(input, output) {
     if(input$setSeed) {
       set.seed(input$seedValue)
     }
-    
-    
-    # G <- matrix(c(0.7, -0.15, -0.15, 0.3), nrow = 2, byrow = TRUE)
-    # E <- matrix(c(0.7, 0,0, 0.07), nrow = 2, byrow = TRUE)
-    # N<-100
-    # rep <- 2
-    # r <- -0.5
-    # covdgE_IGE <-r* (G[1,1] * G[2,2] )^0.5
-    # G <- matrix(c(G[1,1], covdgE_IGE, covdgE_IGE, G[2,2]), nrow = 2, byrow = TRUE)
 
+    V_env_DGE=1
+    V_env_IGE=0
+    V_geno=0.75
+    V_voisin=0.3*V_geno
+    cor_geno_voisin=-0.6
+    cov_geno_voisin=cor_geno_voisin*sqrt(V_geno*V_voisin)
+    N_geno=450
+    N_rep=2
+    b_DGE=0.5
+    p=0.1
     
+    V_env_DGE=input$varE11
+    V_env_IGE=input$varE22
+    V_geno=input$varG11
+    V_voisin=input$varG22
+    cor_geno_voisin=input$r
+    cov_geno_voisin=cor_geno_voisin*sqrt(V_geno*V_voisin)
+    N_geno=input$N
+    N_rep=input$rep
+    b_DGE=input$b_DGE
     
-    # Prepare G and E matrices
-    covdgE_IGE <- input$r * (input$varG11 * input$varG22)^0.5
+    mu=c(0,0)
+    G=matrix(c(V_geno,cov_geno_voisin,
+                   cov_geno_voisin,V_voisin),
+                 ncol=2,nrow=2)
+    E=matrix(c(V_env_DGE,0,
+               0,V_env_IGE),
+             ncol=2,nrow=2)
+    P=G+E
     
-    G <- matrix(c(input$varG11, covdgE_IGE, covdgE_IGE, input$varG22), nrow = 2, byrow = TRUE)
-    E <- matrix(c(input$varE11, 0, 0, input$varE22), nrow = 2, byrow = TRUE)
+    df=mvrnorm(n=N_geno,mu,G)
+    colnames(df)=c("DGE","IGE")
+    df_E=mvrnorm(n=(N_geno*N_rep),mu,E)
     
-    N <- input$N
-
-    P <- G + E
-    mu <- c(0, 0)
+    DGE=as.matrix(df[,1])
+    var(DGE)
+    IGE=as.matrix(df[,2])
+    var(IGE)
     
-    # size of the square 
-    size <- rep*N + 5
+    données=expand_grid("Focal"=as.character(paste0("G",1:(N_geno))),"rep"=as.character(1:N_rep))
+    grid=expand_grid("Row"=factor(1:sqrt(N_geno*N_rep)),"Column"=factor(1:sqrt(N_geno*N_rep)))
+    grid=grid[sample(1:(N_geno*N_rep),(N_geno*N_rep)),]
+    mat_grid=matrix("vide",nrow=sqrt(N_geno*N_rep)+2,ncol=sqrt(N_geno*N_rep)+2)
+    données=cbind(données,grid)
     
-    Enviro <- mvrnorm(n = size^2 , mu = mu, Sigma = E)
-    enviro_DGE <- matrix(Enviro[,1], nrow = size, ncol = size)
-    enviro_IGE <- matrix(Enviro[,2], nrow = size, ncol = size)
-    
-    # the realized number of rep per genotype is not compulsarily rep 
-    alea<-sample(1:N, size^2, replace = TRUE)
-    voisinage <- matrix(alea, nrow = size, ncol = size)
-    
-    # Load the necessary package for qnorm, dnorm and pnorm functions
-    if(!requireNamespace("stats", quietly = TRUE)) install.packages("stats")
-    
-    # Function to calculate selection intensity (i) from the selection proportion (p)
-    calculate_selection_intensity <- function(p) {
-      # Z-score corresponding to the non-selected proportion p
-      z = qnorm(1 - p)
-      
-      # Calculate selection intensity i using the correct formula
-      i = dnorm(z) / (1 - pnorm(z))
-      
-      return(i)
-    }
-    
-    # Example of use to calculate i when the top 10% are selected
-    
-    i = calculate_selection_intensity(input$p)
-    
-    # Display selection intensity
-    i
-    
-    # Valeur_G function
-    Valeur_G <- function(x, y, genotype, voisinage) {
-      geno <- c()
-      for (i in (x-1):(x+1)) {
-        for (j in (y-1):(y+1)) {
-          if (!(i == x && j == y)) {
-            geno <- c(geno, voisinage[i, j])
-          }
-        }
+    for (i in 1:(nrow(mat_grid)-2)){
+      for (j in 1:(ncol(mat_grid)-2)){
+        mat_grid[i+1,j+1]=données[(données$Row==i&données$Column==j),"Focal"]
       }
-      # addition of genetic and environmental effects
-      DGE <- genotype[voisinage[x, y], 1] + enviro[voisinage[x, y], 1]
-      IGE <- sum(genotype[geno, 2] + enviro[geno, 2])
-      
-      return(DGE + IGE)
     }
+    mat_grid[1,]=sample(données$Focal,length(mat_grid[1,]))
+    mat_grid[sqrt(N_geno*N_rep)+2,]=sample(données$Focal,length(mat_grid[sqrt(N_geno*N_rep)+2,]))
+    mat_grid[,1]=sample(données$Focal,length(mat_grid[,1]))
+    mat_grid[,sqrt(N_geno*N_rep)+2]=sample(données$Focal,length(mat_grid[,sqrt(N_geno*N_rep)+2]))
     
-    # Calculations and display of results (to be adapted as needed)
-    Pheno <- c()
-    tri_geno <- c()
-    cpt <- 0
+    matrice_voisin=matrix(0,nrow = N_geno*N_rep,ncol=N_geno,dimnames = list(1:(N_geno*N_rep),unique(données$Focal)))
+    données=cbind(matrice_voisin,données,data.frame("vide"=NA))
     
-    for (x in c(3:(N*rep+3))) {
-      for (y in c(3:(N*rep+3))) {
-        cpt <- cpt + 1
-        Pheno[cpt] <- Valeur_G(x, y, genotype, voisinage)
-        tri_geno[cpt] <- voisinage[x, y]
+    for (i in 2:(nrow(mat_grid)-1)){
+      for (j in 2:(nrow(mat_grid)-1)){
+        données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i-1,j-1]]=données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i-1,j-1]]+1
+        données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i,j-1]]=données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i,j-1]]+1
+        données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i+1,j-1]]=données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i+1,j-1]]+1
+        données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i-1,j]]=données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i-1,j]]+1
+        données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i+1,j]]=données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i+1,j]]+1
+        données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i-1,j+1]]=données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i-1,j+1]]+1
+        données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i,j+1]]=données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i,j+1]]+1
+        données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i+1,j+1]]=données[données$Row==(i-1)&données$Column==(j-1),mat_grid[i+1,j+1]]+1
       }
     }
     
-    length(Pheno)
+    Zg=model.matrix(~Focal-1,données)
+    Zv=as.matrix(données[,1:N_geno])
     
-    # Before selection
+    Pheno=Zg%*%DGE+Zv%*%IGE+df_E[,1]+df_E[,2]
+    données$Pheno=as.vector(Pheno)
+    données$Focal=as.factor(données$Focal)
+    Zv=Zv[,levels(données$Focal)]
+  
     
-    # mean(Pheno)
-    # var(Pheno)
+    modèle_sommer_no_cov=mmer(fixed = Pheno~1,
+                              random= ~vsr(Focal)+vsr(as.matrix(données[,1:N_geno])),
+                              rcov = ~units,
+                              data=données,nIters = 4 )
     
-    # hist(Pheno)
+    summary(modèle_sommer_no_cov)
     
-    # Selection of 50%: phenotypic selection differential
-    # mean(Pheno[order(Pheno, decreasing = TRUE)][1:50])
+    plot(randef(modèle_sommer_no_cov)$`u:Focal`$Pheno,randef(modèle_sommer_no_cov)$`u:données:N_geno`$Pheno)
     
-    # Selected individuals
-    N_sel <- round(cpt * input$p)
+    DGE_pred=data.frame("Focal"=names(randef(modèle_sommer_no_cov)$`u:Focal`$Pheno),"DGE_pred"=as.numeric(randef(modèle_sommer_no_cov)$`u:Focal`[[1]]))
+    IGE_pred=data.frame("Focal"=names(randef(modèle_sommer_no_cov)$`u:Focal`$Pheno),"IGE_pred"=as.numeric(randef(modèle_sommer_no_cov)$`u:données:N_geno`[[1]]))
+    pred=merge(DGE_pred,IGE_pred,by="Focal")
+    plot(pred$DGE_pred,pred$IGE_pred)
+    plot(pred$DGE_pred,DGE)
+    plot(pred$IGE_pred,IGE)
     
-    tri_geno[order(Pheno, decreasing = TRUE)][1:N_sel]
-    geno_sel <- genotype[tri_geno[order(Pheno, decreasing = TRUE)][1:N_sel],]
+    pred$I=b_DGE*pred$DGE_pred+(1-b_DGE)*pred$IGE_pred
+    sel = pred[pred$I>quantile(pred$I,1-p),]
     
-    # Selection differential on DGE and IGE
-    S <- c()
-    S[1] <- mean(genotype[tri_geno[order(Pheno, decreasing = TRUE)][1:N_sel], 1])
-    S[2] <- mean(genotype[tri_geno[order(Pheno, decreasing = TRUE)][1:N_sel], 2])
+    S=c(mean(sel$DGE_pred),mean(sel$IGE_pred))
     
-    # Response to selection on DGE and IGE
-    R <- G %*% solve(P) %*% S
-    # R
+    R=G%*%solve(P)%*%S
     
-    # DGE and IGE of the new population
-    mus <- mu
-    mus[1] <- mu[1] + R[1]
-    mus[2] <- mu[2] + R[2]
+    mus=c(mu[1]+R[1],mu[2]+R[2])
     
-    # New population after selection
-    # Calculate the new performance in mixture
+    df_sel=mvrnorm(N_geno,mus,G)
+    colnames(df_sel)=c("DGE","IGE")
     
-    # Generate a cloud of these data with phenotypic data
-    new_geno <- mvrnorm(n = N^2, mus, G)
+    DGE_sel=as.matrix(df_sel[,1])
+    var(DGE_sel)
+    IGE_sel=as.matrix(df_sel[,2])
+    var(IGE_sel)
+    df_E_sel=mvrnorm(n=(N_geno*N_rep),mu,E)
     
-    # Distribute them on an excess square grid
-    new_voisinage <- matrix(sample(1:N^2, 4*N^2, replace = TRUE), nrow = 2*N, ncol = 2*N)
+    données_sel=expand_grid("Focal_sel"=as.character(paste0("G_sel",1:(N_geno))),"rep"=as.character(1:N_rep))
+    grid_sel=expand_grid("Row"=factor(1:sqrt(N_geno*N_rep)),"Column"=factor(1:sqrt(N_geno*N_rep)))
+    grid_sel=grid_sel[sample(1:(N_geno*N_rep),(N_geno*N_rep)),]
+    mat_grid_sel=matrix("vide",nrow=sqrt(N_geno*N_rep)+2,ncol=sqrt(N_geno*N_rep)+2)
+    données_sel=cbind(données_sel,grid_sel)
     
-    new_Pheno <- c()
-    new_tri_geno <- c()
-    cpt <- 0
+    for (i in 1:(nrow(mat_grid_sel)-2)){
+      for (j in 1:(ncol(mat_grid_sel)-2)){
+        mat_grid_sel[i+1,j+1]=données_sel[(données_sel$Row==i&données_sel$Column==j),"Focal_sel"]
+      }
+    }
+    #mat_grid[1,]=sample(données$Focal,length(mat_grid[1,]))
+    #mat_grid[sqrt(N_geno*N_rep)+2,]=sample(données$Focal,length(mat_grid[sqrt(N_geno*N_rep)+2,]))
+    #mat_grid[,1]=sample(données$Focal,length(mat_grid[,1]))
+    #mat_grid[,sqrt(N_geno*N_rep)+2]=sample(données$Focal,length(mat_grid[,sqrt(N_geno*N_rep)+2]))
     
-    # Extract an internal square in the large matrix
-    for (x in c(5:(N+5))) {
-      for (y in c(5:(N+5))) {
-        cpt <- cpt + 1
-        new_Pheno[cpt] <- Valeur_G(x, y, new_geno, new_voisinage)
-        new_tri_geno[cpt] <- new_voisinage[x, y]
+    matrice_voisin_sel=matrix(0,nrow = N_geno*N_rep,ncol=N_geno,dimnames = list(1:(N_geno*N_rep),unique(données_sel$Focal_sel)))
+    données_sel=cbind(matrice_voisin_sel,données_sel,data.frame("vide"=NA))
+    
+    for (i in 2:(nrow(mat_grid_sel)-1)){
+      for (j in 2:(nrow(mat_grid_sel)-1)){
+        données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i-1,j-1]]=données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i-1,j-1]]+1
+        données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i,j-1]]=données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i,j-1]]+1
+        données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i+1,j-1]]=données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i+1,j-1]]+1
+        données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i-1,j]]=données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i-1,j]]+1
+        données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i+1,j]]=données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i+1,j]]+1
+        données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i-1,j+1]]=données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i-1,j+1]]+1
+        données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i,j+1]]=données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i,j+1]]+1
+        données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i+1,j+1]]=données_sel[données_sel$Row==(i-1)&données_sel$Column==(j-1),mat_grid_sel[i+1,j+1]]+1
       }
     }
     
-    # Example: Calculation and display of the average G values and phenotypic values
-    # These are examples and should be adapted based on the specific calculations of your script
+    Zg_sel=model.matrix(~Focal_sel-1,données_sel)
+    Zv_sel=as.matrix(données_sel[,1:N_geno])
+    Pheno_sel=Zg_sel%*%DGE_sel+Zv_sel%*%IGE_sel+df_E_sel[,1]+df_E_sel[,2]
+    
+    output$plotGenotype <- renderPlot({
+      ggplot() +
+        geom_density_2d(data = as.data.frame(df), aes(x = DGE, y = IGE), color = "gray") +  # General points
+        geom_density_2d(data = as.data.frame(df_sel), aes(x = DGE, y = IGE), color = "red") +  # Special points
+        xlab("DGE") +
+        ylab("IGE") +
+        ggtitle("Genotype Distribution")+
+        theme_bw()
+    })
     
     output$summaryOutput <- renderText({
       paste("Summary of calculations...")
     })
     
-    
-    output$plotGenotype <- renderPlot({
-      ggplot() +
-        geom_point(data = as.data.frame(genotype), aes(x = V1, y = V2), color = "gray") +  # General points
-        geom_point(data = as.data.frame(geno_sel), aes(x = V1, y = V2), color = "red") +  # Special points
-        xlab("DGE") +
-        ylab("IGE") +
-        ggtitle("Genotype Distribution")
-    })
-    
     # Combine the two vectors into a dataframe
     combinedData <- rbind(data.frame(Value = Pheno, Phase = "Before selection"),
-                          data.frame(Value = new_Pheno, Phase = "After selection"))
+                          data.frame(Value = Pheno_sel, Phase = "After selection"))
     
     output$plotPhenotype <- renderPlot({
       ggplot(combinedData, aes(x = Value, fill = Phase)) +
