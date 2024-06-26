@@ -2,8 +2,6 @@ library(shiny)
 library(MASS) # For mvrnorm
 library(ggplot2) # For plots
 library(sommer)
-library(data.table)
-library(tidyverse)
 
 # UI
 ui <- fluidPage(
@@ -11,7 +9,7 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       actionButton("goButton", "Run Simulation"),
-      sliderInput("N", "Number of genotypes (N)", min = 10, max = 100, value = 20),
+      sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 450),
       sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 20, value = 5),
       numericInput("varG11", "Genetic variance DGE", value = 0.75),
       numericInput("varG22", "Genetic variance IGE", value = 0.07),
