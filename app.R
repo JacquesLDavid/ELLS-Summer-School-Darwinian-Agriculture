@@ -15,7 +15,6 @@ library(sommer)
 library(data.table)
 library(tidyverse)
 library(shinycssloaders)
-library(schoolmath)
 
 
 
@@ -31,31 +30,34 @@ ui <- fluidPage(
       sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 450),
       sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 100, value = 2),
       numericInput("varG11", "Genetic variance DGE", value = 1),
-      numericInput("varG22", "Genetic variance IGE", value = 0.1),
-      sliderInput("r", "Genetic correlation DGE : IGE", min = -1, max = 1, value = -0.6, step = 0.1),
+      numericInput("varG22", "Genetic variance IGE", value = 0.125),
+      sliderInput("r", "Genetic correlation DGE : IGE", min = -1, max = 1, value = 0, step = 0.1),
       p("Don't fix too different environmental variances"),
       numericInput("varE11", "Environmental variance DGE", value = 1),
-      numericInput("varE22", "Environmental variance IGE", value = 1),
+      numericInput("varE22", "Environmental variance IGE", value = 0.125),
       div(style = "text-align: center;",
           actionButton("goButton", "Run Simulation")
       ),
       sliderInput("p", "Selection pressure", min = 0.01, max = 1, value = 0.1, step = 0.1),          
-      sliderInput("b_DGE", "Index weight for DGE (weight for IGE = 1 - weight for DGE)", min = 0, max = 1, value = 0.5, step = 0.1),
+      sliderInput("b_DGE", "Index weight for DGE (weight for IGE = 1 - weight for DGE)", min = -1, max = 1, value = 0.5, step = 0.1),
       div(style = "text-align: center;",
           actionButton("SelButton","Make Selection")
       )
     ),
     mainPanel(
       tabsetPanel(type = "tabs",
-                  tabPanel("Graph", 
+                  tabPanel("Population characteristics", 
                            plotOutput("plotTRUE_DGE_IGE"),
                            plotOutput("plotTRUEvsPRED_DGE"),
                            plotOutput("plotTRUEvsPRED_IGE"),
                            plotOutput("plotPred_DGE_IGE"),
+                  ),
+                  tabPanel("Selection", 
                            plotOutput("plotMass_differential"),
                            plotOutput("plotMass_Selection"),
                            plotOutput("plotIndex_Selection"),
                   ),
+                  
                   
                   tabPanel("Summary", textOutput("summaryOutput"))
       )
@@ -66,20 +68,29 @@ ui <- fluidPage(
 # Server
 server <- function(input, output) {
   observeEvent(input$goButton, {
+    output$plotTRUE_DGE_IGE<-renderPlot(ggplot())
+    output$plotTRUEvsPRED_DGE<-renderPlot(ggplot())
+    output$plotTRUEvsPRED_IGE<-renderPlot(ggplot())
+    output$plotPred_DGE_IGE<-renderPlot(ggplot())
+    output$plotMass_differential<-renderPlot(ggplot())
+    output$plotMass_Selection<-renderPlot(ggplot())
+    output$plotIndex_Selection<-renderPlot(ggplot())
+    
     if(input$setSeed) {
       set.seed(input$seedValue)
     }
+    #Asreml=input$Asreml
+    #Mean=input$Mean
     Asreml=FALSE
     Mean=FALSE
-    # if(input$Asreml){
-    #   library(asreml)
-    #   asreml.options(workspace="2gb",maxit=5,ai.sing=TRUE)
-    #   Asreml=TRUE
-    # }
-    # else{
-    #   Asreml=FALSE
-    # }
-    #Mean=input$Mean
+    if(Asreml){
+      library(asreml)
+      asreml.options(workspace="2gb",maxit=5,ai.sing=TRUE)
+      Asreml=TRUE
+    }
+    else{
+      Asreml=FALSE
+    }
     
     # V_env_DGE=0.1
     # V_env_IGE=0
@@ -234,6 +245,7 @@ server <- function(input, output) {
       pred=merge(DGE_pred,IGE_pred,by="Focal")
     }
     assign("pred",pred,envir = globalenv())
+    assign("Modèle",Modèle,envir = globalenv())
     # summary(Modèle)
     
     #plot(randef(Modèle)$`u:Focal`$Pheno,randef(Modèle)$`u:Zv`$Pheno)
@@ -280,8 +292,6 @@ server <- function(input, output) {
     cor(pred$DGE_pred, pred$I)
     cor(pred$IGE_pred, pred$I)
     cor(pred$IGE_pred, pred$DGE_pred)
-    
-    hist(pred$I)
     
     # list of selected genotypes (numbers will be different from mass phenotype selection)
     sel = which(pred$I>quantile(pred$I,1-p))
@@ -405,7 +415,7 @@ server <- function(input, output) {
     # Selection differential
     S<-c()
     S[1] <- mean((Zg%*%DGE + df_E[,1])[list_sel])
-    S[2] <- mean((Zv%*%IGE + df_E[,2])[list_sel])
+    S[2] <- mean((Zg%*%IGE + df_E[,2])[list_sel])
     
     # Genetic gain
     R=G%*%solve(P)%*%S
@@ -496,8 +506,11 @@ server <- function(input, output) {
     
     
     # Display the mean of phenotypes as an example of summary output
-    output$summaryOutput <- renderPrint({
-      print(summary(Modèle))
+    output$summaryOutput <- renderText({
+      as.data.frame(summary(Modèle)$varcomp),
+      cor(pred$DGE_pred, pred$I)
+      cor(pred$IGE_pred, pred$I)
+      cor(pred$IGE_pred, pred$DGE_pred)
     })
   })
 }
