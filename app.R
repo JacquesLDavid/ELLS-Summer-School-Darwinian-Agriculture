@@ -508,8 +508,8 @@ server <- function(input, output) {
     # Display the mean of phenotypes as an example of summary output
     output$summaryOutput <- renderText({
       as.data.frame(summary(Modèle)$varcomp),
-      cor(pred$DGE_pred, pred$I)
-      cor(pred$IGE_pred, pred$I)
+      cor(pred$DGE_pred, pred$I),
+      cor(pred$IGE_pred, pred$I),
       cor(pred$IGE_pred, pred$DGE_pred)
     })
   })
