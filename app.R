@@ -96,23 +96,7 @@ server <- function(input, output) {
     
     c=0
     if (ceiling(sqrt(N_geno*N_rep))!=sqrt(N_geno*N_rep)){
-      while(N_row<4|N_col<4){
-        N_row=gcd(ceiling(sqrt(N_geno*N_rep))^2,N_geno*N_rep)
-        N_col=ceiling(sqrt(N_geno*N_rep))^2/N_row
-        if(sqrt(N_geno*N_rep)==ceiling(sqrt(N_geno*N_rep))){
-          N_row=N_col=sqrt(N_geno*N_rep)
-        }
-        if(N_row<4|N_col<4){
-          if(c==0){
-            N_geno=N_geno+1
-            c=1
-          }
-          if(c==1){
-            N_rep=N_rep+1
-            c=0
-          }
-        }
-      }
+      N_row=N_col=ceiling(sqrt(N_geno*N_rep))
     }
     else {
       N_row=N_col=sqrt(N_geno*N_rep)
@@ -261,8 +245,8 @@ server <- function(input, output) {
         ggtitle("True DGE vs. IGE")+
         theme_bw()
     })
-  })
-    observeEvent(input$SelButton,{
+  # })
+  #   observeEvent(input$SelButton,{
       
     b_DGE=input$b_DGE
     p<-input$p
