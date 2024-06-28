@@ -26,19 +26,24 @@ ui <- fluidPage(
     sidebarPanel(
       checkboxInput("setSeed", "Set seed for reproducibility", value = FALSE),
       numericInput("seedValue", "Seed value", value = 12345),
-      checkboxInput("Mean","Mean effects (checked) or Sum effects (unchecked) for IGE calculation", value=TRUE),
-      checkboxInput("Asreml","Use of Asreml to make inference", value=FALSE),
+      #checkboxInput("Mean","Mean effects (checked) or Sum effects (unchecked) for IGE calculation", value=TRUE),
+      #checkboxInput("Asreml","Use of Asreml to make inference", value=FALSE),
       sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 450),
       sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 100, value = 2),
-      numericInput("varG11", "Genetic variance DGE", value = 0.75),
-      numericInput("varG22", "Genetic variance IGE", value = 0.225),
+      numericInput("varG11", "Genetic variance DGE", value = 1),
+      numericInput("varG22", "Genetic variance IGE", value = 0.1),
       sliderInput("r", "Genetic correlation DGE : IGE", min = -1, max = 1, value = -0.6, step = 0.1),
+      p("Don't fix too different environmental variances"),
       numericInput("varE11", "Environmental variance DGE", value = 1),
-      numericInput("varE22", "Environmental variance IGE", value = 0.07),
-      actionButton("goButton", "Run Simulation"),
-      actionButton("SelButton","Make Selection"),
+      numericInput("varE22", "Environmental variance IGE", value = 1),
+      div(style = "text-align: center;",
+          actionButton("goButton", "Run Simulation")
+      ),
       sliderInput("p", "Selection pressure", min = 0.01, max = 1, value = 0.1, step = 0.1),          
-      sliderInput("b_DGE", "Index weight for DGE (weight for IGE = 1 - weight for DGE)", min = 0, max = 1, value = 0.5, step = 0.1)
+      sliderInput("b_DGE", "Index weight for DGE (weight for IGE = 1 - weight for DGE)", min = 0, max = 1, value = 0.5, step = 0.1),
+      div(style = "text-align: center;",
+          actionButton("SelButton","Make Selection")
+      )
     ),
     mainPanel(
       tabsetPanel(type = "tabs",
@@ -46,10 +51,11 @@ ui <- fluidPage(
                            plotOutput("plotTRUE_DGE_IGE"),
                            plotOutput("plotTRUEvsPRED_DGE"),
                            plotOutput("plotTRUEvsPRED_IGE"),
+                           plotOutput("plotPred_DGE_IGE"),
                            plotOutput("plotMass_differential"),
                            plotOutput("plotMass_Selection"),
                            plotOutput("plotIndex_Selection"),
-    ),
+                  ),
                   
                   tabPanel("Summary", textOutput("summaryOutput"))
       )
@@ -63,16 +69,18 @@ server <- function(input, output) {
     if(input$setSeed) {
       set.seed(input$seedValue)
     }
-    if(input$Asreml){
-      library(asreml)
-      asreml.options(workspace="2gb",maxit=5,ai.sing=TRUE)
-      Asreml=TRUE
-    }
-    else{
-      Asreml=FALSE
-    }
-    Mean=input$Mean
-
+    Asreml=FALSE
+    Mean=FALSE
+    # if(input$Asreml){
+    #   library(asreml)
+    #   asreml.options(workspace="2gb",maxit=5,ai.sing=TRUE)
+    #   Asreml=TRUE
+    # }
+    # else{
+    #   Asreml=FALSE
+    # }
+    #Mean=input$Mean
+    
     # V_env_DGE=0.1
     # V_env_IGE=0
     # V_geno=0.75
@@ -106,21 +114,25 @@ server <- function(input, output) {
     assign("N_rep",N_rep,envir = globalenv())
     assign("N_row",N_row,envir = globalenv())
     assign("N_col",N_col,envir = globalenv())
+    assign("Mean",Mean,envir = globalenv())
+    assign("Asreml",Asreml,envir=globalenv())
     
     mu=c(0,0)
     assign("mu",mu,envir = globalenv())
     
     G=matrix(c(V_geno,cov_geno_voisin,
-                   cov_geno_voisin,V_voisin),
-                   ncol=2,nrow=2)
+               cov_geno_voisin,V_voisin),
+             ncol=2,nrow=2)
     
     assign("G",G,envir = globalenv())
-
+    
     E=matrix(c(V_env_DGE,0,0,V_env_IGE), ncol=2,nrow=2)
     
     assign("E",E,envir = globalenv())
     
     P=G+E
+    
+    assign("P",P,envir = globalenv())
     
     df=mvrnorm(n=N_geno,mu,G)
     colnames(df)=c("DGE","IGE")
@@ -129,13 +141,13 @@ server <- function(input, output) {
     DGE=as.matrix(df[,1])
     assign("DGE",DGE,envir = globalenv())
     # var(DGE)
-
+    
     IGE=as.matrix(df[,2])
     assign("IGE",IGE,envir = globalenv())
     # var(IGE)
     
-    DATA=expand_grid("Focal"=as.character(paste0("G",1:(N_geno))),"rep"=as.character(1:N_rep))
-
+    DATA=expand_grid("Focal"=as.character(paste0("G",sprintf("%03d", 1:N_geno))),"rep"=as.character(sprintf("%03d", 1:N_rep)))
+    
     grid=expand_grid("Row"=factor(1:N_row),"Column"=factor(1:N_col))
     grid=grid[sample(1:(N_row*N_col),(N_geno*N_rep)),]
     
@@ -170,6 +182,7 @@ server <- function(input, output) {
     }
     
     Zg=model.matrix(~Focal-1,DATA)
+    dimnames(Zg)[[2]]=paste0("G",sprintf("%03d", 1:N_geno))
     
     if(Mean==TRUE){
       Zv=as.matrix(DATA[,1:N_geno])/8
@@ -187,7 +200,7 @@ server <- function(input, output) {
     
     DATA$Pheno=as.vector(Pheno)
     DATA$Focal=as.factor(DATA$Focal)
- 
+    
     
     # mass phenotypic selection
     DATA$Pheno=as.vector(Pheno)
@@ -199,10 +212,10 @@ server <- function(input, output) {
     # Estimation of BLUP 
     if (Asreml){
       Modèle=asreml(fixed = Pheno~1,
-                           random = ~str(~Focal+grp(Voisin),~us(2):id(Focal)),
-                           group=list(Voisin=1:N_geno),
-                           residual = ~units,
-                           data=DATA)
+                    random = ~str(~Focal+grp(Voisin),~us(2):id(Focal)),
+                    group=list(Voisin=1:N_geno),
+                    residual = ~units,
+                    data=DATA)
       
       tmp_DGE=data.frame("DGE_pred"=summary(Modèle,coef=TRUE)$coef.random[1:N_geno,1],
                          "Focal"=str_split(names(summary(Modèle,coef=TRUE)$coef.random[1:N_geno,1]),pattern = "_",simplify = TRUE)[,2])
@@ -212,9 +225,9 @@ server <- function(input, output) {
     }
     else{
       Modèle=mmer(fixed = Pheno~1,
-                                random= ~vsr(Focal)+vsr(Zv),
-                                rcov = ~units,
-                                data=DATA,nIters = 4 )
+                  random= ~vsr(Focal)+vsr(Zv),
+                  rcov = ~units,
+                  data=DATA,nIters = 4 )
       
       DGE_pred=data.frame("Focal"=names(randef(Modèle)$`u:Focal`$Pheno),"DGE_pred"=as.numeric(randef(Modèle)$`u:Focal`[[1]]))
       IGE_pred=data.frame("Focal"=names(randef(Modèle)$`u:Focal`$Pheno),"IGE_pred"=as.numeric(randef(Modèle)$`u:Zv`[[1]]))
@@ -245,19 +258,25 @@ server <- function(input, output) {
         ggtitle("True DGE vs. IGE")+
         theme_bw()
     })
-  # })
-  #   observeEvent(input$SelButton,{
-      
+    output$plotPred_DGE_IGE <- renderPlot({
+      ggplot() +
+        geom_point(data = as.data.frame(pred), aes(x = DGE_pred, y = IGE_pred), color = "gray") +  # General points
+        xlab("DGE_pred") +
+        ylab("IGE_pred") +
+        ggtitle("DGE vs. IGE")+
+        theme_bw()
+    })
+  })
+  observeEvent(input$SelButton,{
     b_DGE=input$b_DGE
     p<-input$p
-    Mean=input$Mean
     N_geno=globalenv()$N_geno
     pred=globalenv()$pred
     
     #####Index selection
     
     pred$I <- b_DGE*pred$DGE_pred+(1-b_DGE)*pred$IGE_pred
-
+    
     cor(pred$DGE_pred, pred$I)
     cor(pred$IGE_pred, pred$I)
     cor(pred$IGE_pred, pred$DGE_pred)
@@ -269,7 +288,7 @@ server <- function(input, output) {
     length(sel)
     
     R<-c(mean(DGE[sel]),mean(IGE[sel]))
-  
+    
     # R=G%*%solve(P)%*%S
     
     mus=c(mu[1]+R[1],mu[2]+R[2])
@@ -281,7 +300,7 @@ server <- function(input, output) {
     IGE_sel_I=as.matrix(df_sel_I[,2])
     df_E_sel_I=mvrnorm(n=(N_geno*N_rep),mu,E)
     
-    DATA_sel_I=expand_grid("Focal_sel_I"=as.character(paste0("G_sel_I",1:(N_geno))),"rep"=as.character(1:N_rep))
+    DATA_sel_I=expand_grid("Focal_sel_I"=as.character(paste0("G_sel_I",sprintf("%03d", 1:N_geno))),"rep"=as.character(sprintf("%03d", 1:N_rep)))
     
     grid_sel_I=expand_grid("Row"=factor(1:N_row),"Column"=factor(1:N_col))
     grid_sel_I=grid_sel_I[sample(1:(N_row*N_col),(N_geno*N_rep)),]
@@ -318,6 +337,7 @@ server <- function(input, output) {
     }
     
     Zg_sel_I=model.matrix(~Focal_sel_I-1,DATA_sel_I)
+    dimnames(Zg_sel_I)[[2]]=paste0("G_sel_I",sprintf("%03d", 1:N_geno))
     
     if(Mean==TRUE){
       Zv_sel_I=as.matrix(DATA_sel_I[,1:N_geno])/8
@@ -330,8 +350,8 @@ server <- function(input, output) {
     
     # Combine the two vectors into a dataframe
     combinedData_I <- rbind(data.frame(Value = Pheno, Phase = "Before selection"),
-                          data.frame(Value = Pheno_sel_I, Phase = "After selection"))
-  
+                            data.frame(Value = Pheno_sel_I, Phase = "After selection"))
+    
     mean_before_sel_I=round(mean(combinedData_I[combinedData_I$Phase=="Before selection","Value"]),2)
     mean_after_sel_I=round(mean(combinedData_I[combinedData_I$Phase=="After selection","Value"]),2)
     
@@ -347,7 +367,7 @@ server <- function(input, output) {
         annotate("text",x=mean_after_sel_I+1.5,y=0.3,label=paste0('Delta_mu_pheno = ', mean_after_sel_I - mean_before_sel_I))# Remove the legend title
     })
     
-    ###Mass selection 
+    ###Mass selection
     
     # Selected individuals
     N_sel <- round(nrow(DATA) * p)
@@ -356,13 +376,13 @@ server <- function(input, output) {
     # Définir le seuil
     threshold <- min(DATA$Pheno[list_sel])
     
-    # graphDATA 
+    # graphDATA
     graphDATA<-c()
     graphDATA$Pheno <-DATA$Pheno
     threshold <- min(graphDATA$Pheno[list_sel])
     graphDATA$color <- ifelse(graphDATA$Pheno < threshold, "left", "right")
     
-    # histogram appearing with S the selection differential 
+    # histogram appearing with S the selection differential
     output$plotMass_differential <- renderPlot({
       ggplot(as.data.frame(graphDATA), aes(x = Pheno, fill = color)) +
         geom_histogram(binwidth = 0.2, color = "black", boundary = threshold) +
@@ -387,8 +407,7 @@ server <- function(input, output) {
     S[1] <- mean((Zg%*%DGE + df_E[,1])[list_sel])
     S[2] <- mean((Zv%*%IGE + df_E[,2])[list_sel])
     
-    # Genetic gain  
-    P=G+E
+    # Genetic gain
     R=G%*%solve(P)%*%S
     mus=c(mu[1]+R[1],mu[2]+R[2])
     
@@ -399,7 +418,7 @@ server <- function(input, output) {
     IGE_sel=as.matrix(df_sel[,2])
     df_E_sel=mvrnorm(n=(N_geno*N_rep),mu,E)
     
-    DATA_sel=expand_grid("Focal_sel"=as.character(paste0("G_sel",1:(N_geno))),"rep"=as.character(1:N_rep))
+    DATA_sel=expand_grid("Focal_sel"=as.character(paste0("G_sel",sprintf("%03d", 1:N_geno))),"rep"=as.character(sprintf("%03d", 1:N_rep)))
     
     grid_sel=expand_grid("Row"=factor(1:N_row),"Column"=factor(1:N_col))
     grid_sel=grid_sel[sample(1:(N_row*N_col),(N_geno*N_rep)),]
@@ -436,6 +455,7 @@ server <- function(input, output) {
     }
     
     Zg_sel=model.matrix(~Focal_sel-1,DATA_sel)
+    dimnames(Zg_sel)[[2]]=paste0("G_sel",sprintf("%03d", 1:N_geno))
     
     if(Mean==TRUE){
       Zv_sel=as.matrix(DATA_sel[,1:N_geno])/8
