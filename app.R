@@ -72,12 +72,13 @@ ui <- fluidPage(
                                textOutput("TRUEVarOutputDGE"),
                                textOutput("TRUEMeanOutputDGE"),
                                textOutput("TRUEVarOutputIGE"),
-                               textOutput("TRUEMeanOutputDGE"),
+                               textOutput("TRUEMeanOutputIGE"),
                                textOutput("TRUEVarOutputEnv_DGE"),
-                               textOutput("TRUEMeanOutputDGE"),
+                               textOutput("TRUEMeanOutputEnv_DGE"),
                                textOutput("TRUEVarOutputEnv_IGE"),
-                               textOutput("TRUEMeanOutputDGE"),
-                               textOutput("summaryOutput"),
+                               textOutput("TRUEMeanOutputEnv_IGE"),
+                               textOutput("MeanPheno"),
+                               textOutput("VarPheno"),
                                br(),
                                h4("Variance Table"),
                                div(class = "table-container",
@@ -93,8 +94,19 @@ ui <- fluidPage(
                                h2("After selection"),
                                br(),
                                h3("Mass Selection"),
+                               textOutput("MeanPhenoSel"),
+                               textOutput("VarPhenoSel"),
+                               textOutput("SelectionDifferential_DGE"),
+                               textOutput("SelectionDifferential_IGE"),
+                               textOutput("SelectionResponse_DGE"),
+                               textOutput("SelectionResponse_IGE"),
                                br(),
-                               h3("Index selection")
+                               h3("Index selection"),
+                               textOutput("MeanPhenoSel_I"),
+                               textOutput("VarPhenoSel_I"),
+                               textOutput("SelectionResponse_DGE_I"),
+                               textOutput("SelectionResponse_IGE_I")
+                               
                            ),
                            
                   )
@@ -211,21 +223,21 @@ server <- function(input, output) {
       paste0("V(Env_IGE) = ",round(var(df_E[,2]),3))
     })
     
-    #output$TRUEMeanOutputDGE <- renderText({
-    #  paste0("Mean(DGE) = ",round(Mean(DGE),3))
-    #})
-    
-    #output$TRUEMeanOutputIGE <- renderText({
-    #  paste0("Mean(IGE) = ",round(Mean(IGE),3))
-    #})
-    
-    #output$TRUEMeanOutputEnv_DGE <- renderText({
-    #  paste0("Mean(Env_DGE) = ",round(Mean(df_E[,1]),3))
-    #})
-    
-    #output$TRUEMeanOutputEnv_IGE <- renderText({
-    #  paste0("Mean(Env_IGE) = ",round(Mean(df_E[,2]),3))
-    #})
+    output$TRUEMeanOutputDGE <- renderText({
+      paste0("Mean(DGE) = ",round(mean(DGE),3))
+    })
+
+    output$TRUEMeanOutputIGE <- renderText({
+      paste0("Mean(IGE) = ",round(mean(IGE),3))
+    })
+
+    output$TRUEMeanOutputEnv_DGE <- renderText({
+      paste0("Mean(Env_DGE) = ",round(mean(df_E[,1]),3))
+    })
+
+    output$TRUEMeanOutputEnv_IGE <- renderText({
+      paste0("Mean(Env_IGE) = ",round(mean(df_E[,2]),3))
+    })
     
     DATA=expand_grid("Focal"=as.character(paste0("G",sprintf("%03d", 1:N_geno))),"rep"=as.character(sprintf("%03d", 1:N_rep)))
     
@@ -278,6 +290,14 @@ server <- function(input, output) {
     assign("df_E",df_E,envir=globalenv())
     
     Pheno=Zg%*%DGE+Zv%*%IGE+df_E[,1]+df_E[,2]
+    
+    output$MeanPheno <- renderText({
+      paste0("Mean(Pheno) = ",mean(Pheno))
+    })
+    
+    output$VarPheno <- renderText({
+      paste0("Var(Pheno) = ",var(Pheno))
+    })
     
     DATA$Pheno=as.vector(Pheno)
     DATA$Focal=as.factor(DATA$Focal)
@@ -347,7 +367,6 @@ server <- function(input, output) {
       paste0("r(PRED DGE vs. PRED IGE) = ",round(cor(pred$DGE_pred,pred$IGE_pred),2))
     })
     
-    
     output$plotTRUE_DGE_IGE <- renderPlot({
       ggplot() +
         geom_point(data = as.data.frame(df), aes(x = DGE, y = IGE), color = "gray") +  # General points
@@ -382,18 +401,15 @@ server <- function(input, output) {
     
     pred$I <- b_DGE*pred$DGE_pred+(1-b_DGE)*pred$IGE_pred
     
-    cor(pred$DGE_pred, pred$I)
-    cor(pred$IGE_pred, pred$I)
-    
     # list of selected genotypes (numbers will be different from mass phenotype selection)
     sel = which(pred$I>quantile(pred$I,1-p))
     length(sel)
     
-    R<-c(mean(DGE[sel]),mean(IGE[sel]))
+    R_I<-c(mean(DGE[sel]),mean(IGE[sel]))
     
     # R=G%*%solve(P)%*%S
     
-    mus=c(mu[1]+R[1],mu[2]+R[2])
+    mus=c(mu[1]+R_I[1],mu[2]+R_I[2])
     
     df_sel_I=mvrnorm(N_geno,mus,G)
     colnames(df_sel_I)=c("DGE","IGE")
@@ -450,6 +466,18 @@ server <- function(input, output) {
     
     Pheno_sel_I=Zg_sel_I%*%DGE_sel_I+Zv_sel_I%*%IGE_sel_I+df_E_sel_I[,1]+df_E_sel_I[,2]
     
+    output$MeanPhenoSel_I <- renderText({
+      paste0("Mean(Pheno_sel_I) = ",mean(Pheno_sel_I))
+    })
+    output$VarPhenoSel_I <- renderText({
+      paste0("Var(Pheno_sel_I) = ",var(Pheno_sel_I))
+    })
+    output$SelectionResponse_DGE_I <- renderText({
+      paste0("R(DGE_I) = ",R_I[1])
+    })
+    output$SelectionResponse_IGE_I <- renderText({
+      paste0("R(IGE_I) = ",R_I[2])
+    })
     # Combine the two vectors into a dataframe
     combinedData_I <- rbind(data.frame(Value = Pheno, Phase = "Before selection"),
                             data.frame(Value = Pheno_sel_I, Phase = "After selection"))
@@ -568,6 +596,25 @@ server <- function(input, output) {
     
     Pheno_sel=Zg_sel%*%DGE_sel+Zv_sel%*%IGE_sel+df_E_sel[,1]+df_E_sel[,2]
     
+    output$MeanPhenoSel <- renderText({
+      paste0("Mean(Pheno_sel) = ",mean(Pheno_sel))
+    })
+    output$VarPhenoSel <- renderText({
+      paste0("Var(Pheno_sel) = ",var(Pheno_sel))
+    })
+    output$SelectionDifferential_DGE <- renderText({
+      paste0("S(DGE) = ",S[1])
+    })
+    output$SelectionDifferential_IGE <- renderText({
+      paste0("S(IGE) = ",S[2])
+    })
+    output$SelectionResponse_DGE <- renderText({
+      paste0("R(DGE) = ",R[1])
+    })
+    output$SelectionResponse_IGE <- renderText({
+      paste0("R(IGE) = ",R[2])
+    })
+    
     # Combine the two vectors into a dataframe
     combinedData <- rbind(data.frame(Value = Pheno, Phase = "Before selection"),
                           data.frame(Value = Pheno_sel, Phase = "After selection"))
@@ -586,10 +633,6 @@ server <- function(input, output) {
         theme(legend.title = element_blank())+# Remove the legend title
         annotate("text",x=mean_after_sel+1.5,y=0.3,label=paste0('Delta_mu_pheno = ', mean_after_sel - mean_before_sel))# Remove the legend title
       
-    })
-    
-    output$summaryOutput <- renderText({
-      paste("Summary of calculations...")
     })
     
   })
