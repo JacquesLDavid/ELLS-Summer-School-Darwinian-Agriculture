@@ -20,6 +20,15 @@ library(shinycssloaders)
 
 # UI
 ui <- fluidPage(
+  tags$style(HTML("
+            .table-container {
+                display: flex;
+                justify-content: center;
+            }
+            table {
+                margin: auto;
+            }
+        ")),
   titlePanel("Population Evolution Simulation"),
   sidebarLayout(
     sidebarPanel(
@@ -32,7 +41,6 @@ ui <- fluidPage(
       numericInput("varG11", "Genetic variance DGE", value = 1),
       numericInput("varG22", "Genetic variance IGE", value = 0.125),
       sliderInput("r", "Genetic correlation DGE : IGE", min = -1, max = 1, value = 0, step = 0.1),
-      p("Don't fix too different environmental variances"),
       numericInput("varE11", "Environmental variance DGE", value = 1),
       numericInput("varE22", "Environmental variance IGE", value = 0.125),
       div(style = "text-align: center;",
@@ -57,9 +65,40 @@ ui <- fluidPage(
                            plotOutput("plotMass_Selection"),
                            plotOutput("plotIndex_Selection"),
                   ),
+                  tabPanel("Summary",
+                           div(style = "text-align: center;",
+                               h2("Before selection"),
+                               h4("TRUE Mean and Variance parammeters"),
+                               textOutput("TRUEVarOutputDGE"),
+                               textOutput("TRUEMeanOutputDGE"),
+                               textOutput("TRUEVarOutputIGE"),
+                               textOutput("TRUEMeanOutputDGE"),
+                               textOutput("TRUEVarOutputEnv_DGE"),
+                               textOutput("TRUEMeanOutputDGE"),
+                               textOutput("TRUEVarOutputEnv_IGE"),
+                               textOutput("TRUEMeanOutputDGE"),
+                               textOutput("summaryOutput"),
+                               br(),
+                               h4("Variance Table"),
+                               div(class = "table-container",
+                                   tableOutput("tableOutput")
+                               ),
+                               br(),
+                               h4("Correlation Values"),
+                               textOutput("TRUECorTRUE_DGE_IGE"),
+                               textOutput("TRUECorTRUE_DGE_PRED_DGE"),
+                               textOutput("TRUECorTRUE_IGE_PRED_IGE"),
+                               textOutput("TRUECorPRED_DGE_PRED_IGE"),
+                               br(),
+                               h2("After selection"),
+                               br(),
+                               h3("Mass Selection"),
+                               br(),
+                               h3("Index selection")
+                           ),
+                           
+                  )
                   
-                  
-                  tabPanel("Summary", textOutput("summaryOutput"))
       )
     )
   )
@@ -156,6 +195,37 @@ server <- function(input, output) {
     IGE=as.matrix(df[,2])
     assign("IGE",IGE,envir = globalenv())
     # var(IGE)
+    output$TRUEVarOutputDGE <- renderText({
+      paste0("V(DGE) = ",round(var(DGE),3))
+    })
+    
+    output$TRUEVarOutputIGE <- renderText({
+      paste0("V(IGE) = ",round(var(IGE),3))
+    })
+    
+    output$TRUEVarOutputEnv_DGE <- renderText({
+      paste0("V(Env_DGE) = ",round(var(df_E[,1]),3))
+    })
+    
+    output$TRUEVarOutputEnv_IGE <- renderText({
+      paste0("V(Env_IGE) = ",round(var(df_E[,2]),3))
+    })
+    
+    #output$TRUEMeanOutputDGE <- renderText({
+    #  paste0("Mean(DGE) = ",round(Mean(DGE),3))
+    #})
+    
+    #output$TRUEMeanOutputIGE <- renderText({
+    #  paste0("Mean(IGE) = ",round(Mean(IGE),3))
+    #})
+    
+    #output$TRUEMeanOutputEnv_DGE <- renderText({
+    #  paste0("Mean(Env_DGE) = ",round(Mean(df_E[,1]),3))
+    #})
+    
+    #output$TRUEMeanOutputEnv_IGE <- renderText({
+    #  paste0("Mean(Env_IGE) = ",round(Mean(df_E[,2]),3))
+    #})
     
     DATA=expand_grid("Focal"=as.character(paste0("G",sprintf("%03d", 1:N_geno))),"rep"=as.character(sprintf("%03d", 1:N_rep)))
     
@@ -222,45 +292,61 @@ server <- function(input, output) {
     assign("Pheno",Pheno,envir = globalenv())
     # Estimation of BLUP 
     if (Asreml){
-      Modèle=asreml(fixed = Pheno~1,
+      Mod=asreml(fixed = Pheno~1,
                     random = ~str(~Focal+grp(Voisin),~us(2):id(Focal)),
                     group=list(Voisin=1:N_geno),
                     residual = ~units,
                     data=DATA)
       
-      tmp_DGE=data.frame("DGE_pred"=summary(Modèle,coef=TRUE)$coef.random[1:N_geno,1],
-                         "Focal"=str_split(names(summary(Modèle,coef=TRUE)$coef.random[1:N_geno,1]),pattern = "_",simplify = TRUE)[,2])
-      tmp_IGE=data.frame("IGE_pred"=summary(Modèle,coef=TRUE)$coef.random[(N_geno+1):(2*N_geno),1],
-                         "Focal"=str_split(names(summary(Modèle,coef=TRUE)$coef.random[1:N_geno,1]),pattern = "_",simplify = TRUE)[,2])
+      tmp_DGE=data.frame("DGE_pred"=summary(Mod,coef=TRUE)$coef.random[1:N_geno,1],
+                         "Focal"=str_split(names(summary(Mod,coef=TRUE)$coef.random[1:N_geno,1]),pattern = "_",simplify = TRUE)[,2])
+      tmp_IGE=data.frame("IGE_pred"=summary(Mod,coef=TRUE)$coef.random[(N_geno+1):(2*N_geno),1],
+                         "Focal"=str_split(names(summary(Mod,coef=TRUE)$coef.random[1:N_geno,1]),pattern = "_",simplify = TRUE)[,2])
       pred=merge(tmp_DGE,tmp_IGE,by="Focal")
     }
     else{
-      Modèle=mmer(fixed = Pheno~1,
+      Mod=mmer(fixed = Pheno~1,
                   random= ~vsr(Focal)+vsr(Zv),
                   rcov = ~units,
                   data=DATA,nIters = 4 )
       
-      DGE_pred=data.frame("Focal"=names(randef(Modèle)$`u:Focal`$Pheno),"DGE_pred"=as.numeric(randef(Modèle)$`u:Focal`[[1]]))
-      IGE_pred=data.frame("Focal"=names(randef(Modèle)$`u:Focal`$Pheno),"IGE_pred"=as.numeric(randef(Modèle)$`u:Zv`[[1]]))
+      DGE_pred=data.frame("Focal"=names(randef(Mod)$`u:Focal`$Pheno),"DGE_pred"=as.numeric(randef(Mod)$`u:Focal`[[1]]))
+      IGE_pred=data.frame("Focal"=names(randef(Mod)$`u:Focal`$Pheno),"IGE_pred"=as.numeric(randef(Mod)$`u:Zv`[[1]]))
       pred=merge(DGE_pred,IGE_pred,by="Focal")
     }
     assign("pred",pred,envir = globalenv())
-    assign("Modèle",Modèle,envir = globalenv())
-    # summary(Modèle)
+    assign("Mod",Mod,envir = globalenv())
+    # summary(Mod)
     
-    #plot(randef(Modèle)$`u:Focal`$Pheno,randef(Modèle)$`u:Zv`$Pheno)
+    #plot(randef(Mod)$`u:Focal`$Pheno,randef(Mod)$`u:Zv`$Pheno)
     
     # plot(pred$DGE_pred,pred$IGE_pred)
     # plot(pred$DGE_pred,DGE)
     # plot(pred$IGE_pred,IGE)
+    output$TRUECorTRUE_DGE_IGE <- renderText({
+      paste0("r(TRUE DGE vs. IGE) = ",round(cor(DGE,IGE),2))
+    })
     
     output$plotTRUEvsPRED_DGE <- renderPlot({
       plot(DGE,pred$DGE_pred, main = "TRUE vs PRED DGE")
     })
     
+    output$TRUECorTRUE_DGE_PRED_DGE <- renderText({
+      paste0("r(TRUE DGE vs. PRED DGE) = ",round(cor(DGE,pred$DGE_pred),2))
+    })
+    
     output$plotTRUEvsPRED_IGE <- renderPlot({
       plot(IGE,pred$IGE_pred, main = "TRUE vs PRED IGE")
     })
+    
+    output$TRUECorTRUE_IGE_PRED_IGE <- renderText({
+      paste0("r(TRUE IGE vs. PRED IGE) = ",round(cor(IGE,pred$IGE_pred),2))
+    })
+    
+    output$TRUECorPRED_DGE_PRED_IGE <- renderText({
+      paste0("r(PRED DGE vs. PRED IGE) = ",round(cor(pred$DGE_pred,pred$IGE_pred),2))
+    })
+    
     
     output$plotTRUE_DGE_IGE <- renderPlot({
       ggplot() +
@@ -278,12 +364,19 @@ server <- function(input, output) {
         ggtitle("DGE vs. IGE")+
         theme_bw()
     })
+    
+    table=summary(Mod)$varcomp
+    table$Effect=c("DGE","IGE","Env")
+    table=table[,c(5,1:4)]
+    
+    # Display the mean of phenotypes as an example of summary output
+    output$tableOutput <- renderTable({
+      table
+    })
   })
   observeEvent(input$SelButton,{
     b_DGE=input$b_DGE
     p<-input$p
-    N_geno=globalenv()$N_geno
-    pred=globalenv()$pred
     
     #####Index selection
     
@@ -291,7 +384,6 @@ server <- function(input, output) {
     
     cor(pred$DGE_pred, pred$I)
     cor(pred$IGE_pred, pred$I)
-    cor(pred$IGE_pred, pred$DGE_pred)
     
     # list of selected genotypes (numbers will be different from mass phenotype selection)
     sel = which(pred$I>quantile(pred$I,1-p))
@@ -496,23 +588,12 @@ server <- function(input, output) {
       
     })
     
-    
-    
-    
-    
     output$summaryOutput <- renderText({
       paste("Summary of calculations...")
     })
     
-    
-    # Display the mean of phenotypes as an example of summary output
-    output$summaryOutput <- renderText({
-      as.data.frame(summary(Modèle)$varcomp),
-      cor(pred$DGE_pred, pred$I),
-      cor(pred$IGE_pred, pred$I),
-      cor(pred$IGE_pred, pred$DGE_pred)
-    })
   })
+    
 }
 
 # Run the Shiny application
