@@ -226,15 +226,15 @@ server <- function(input, output) {
     output$TRUEMeanOutputDGE <- renderText({
       paste0("Mean(DGE) = ",round(mean(DGE),3))
     })
-
+    
     output$TRUEMeanOutputIGE <- renderText({
       paste0("Mean(IGE) = ",round(mean(IGE),3))
     })
-
+    
     output$TRUEMeanOutputEnv_DGE <- renderText({
       paste0("Mean(Env_DGE) = ",round(mean(df_E[,1]),3))
     })
-
+    
     output$TRUEMeanOutputEnv_IGE <- renderText({
       paste0("Mean(Env_IGE) = ",round(mean(df_E[,2]),3))
     })
@@ -313,10 +313,10 @@ server <- function(input, output) {
     # Estimation of BLUP 
     if (Asreml){
       Mod=asreml(fixed = Pheno~1,
-                    random = ~str(~Focal+grp(Voisin),~us(2):id(Focal)),
-                    group=list(Voisin=1:N_geno),
-                    residual = ~units,
-                    data=DATA)
+                 random = ~str(~Focal+grp(Voisin),~us(2):id(Focal)),
+                 group=list(Voisin=1:N_geno),
+                 residual = ~units,
+                 data=DATA)
       
       tmp_DGE=data.frame("DGE_pred"=summary(Mod,coef=TRUE)$coef.random[1:N_geno,1],
                          "Focal"=str_split(names(summary(Mod,coef=TRUE)$coef.random[1:N_geno,1]),pattern = "_",simplify = TRUE)[,2])
@@ -326,9 +326,9 @@ server <- function(input, output) {
     }
     else{
       Mod=mmer(fixed = Pheno~1,
-                  random= ~vsr(Focal)+vsr(Zv),
-                  rcov = ~units,
-                  data=DATA,nIters = 4 )
+               random= ~vsr(Focal)+vsr(Zv),
+               rcov = ~units,
+               data=DATA,nIters = 4 )
       
       DGE_pred=data.frame("Focal"=names(randef(Mod)$`u:Focal`$Pheno),"DGE_pred"=as.numeric(randef(Mod)$`u:Focal`[[1]]))
       IGE_pred=data.frame("Focal"=names(randef(Mod)$`u:Focal`$Pheno),"IGE_pred"=as.numeric(randef(Mod)$`u:Zv`[[1]]))
@@ -636,7 +636,7 @@ server <- function(input, output) {
     })
     
   })
-    
+  
 }
 
 # Run the Shiny application
