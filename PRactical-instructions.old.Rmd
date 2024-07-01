@@ -1,7 +1,6 @@
 ---
-title: " 2024 ELLS summer school Darwinian agriculture"
-subtitle: "Workshop Social evolution under mass selection or under true breeding values"
-author: "Jacques David, Nicolas Salas, Peter Bourke"
+title: "Practical simulation of social evolution under mass selection or under true breeding values \n - 2024 ELLS summer school Darwinian agriculture"
+author: "Jacques David, Nicolas Salas and other..."
 date: "2024-06-20"
 output:
   pdf_document: default
@@ -13,67 +12,65 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+# Function to check and install packages
+install_if_missing <- function(pkg) {
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+    library(pkg, character.only = TRUE)
+  }
+}
+
+# Check and install necessary packages
+install_if_missing("knitr")
+install_if_missing("kableExtra")
+
 ```
+# Practical Session on Phenotypic Value Decomposition and Selection Effects
 
 # Introduction
 Welcome to this practical session on the decomposition of phenotypic value and the effects of selection. In this session, we will explore how the phenotypic value of a plant is influenced by its genotype and by the genotypes of its neighbors, and how selection on these traits affects the next generation.
 
-# Key theoretical Concepts
-
-find the ref Bijma , Muir etc
+# Key Concepts
 
 ## Decomposition of the Phenotypic Value
 Classically, in one single macro-environment, the phenotypic value ($P$) of an individual can be decomposed into multiple components:
-$$ P = G + E $$  
-Where:  
-- **G** represents the genetic contribution to the phenotype,  
-- **E** represents the micro-environmental contribution to the phenotype.  
+$$ P = G + E $$, 
+Where:
+- **G** represents the genetic contribution to the phenotype.
+- **E** represents the micro-environmental contribution to the phenotype.
 
-In the case of heterogeneous populations, such as Bulks or landraces or farmers varieties, individuals of different genotypes are neighbouring each others. So, if we introduce the fact that the phenotype of a $focal$ individual, $i$, $P_{Focal_i}$, can be determined by its own genotype and by the genotype of its neighbour, $j$, $P_{Focal_i, Neighbour_j}$ can now be decomposed into a Direct Genetic Effect ($DGE$) due to $i$ and the Indirect Genetic Effect ($IGE$) from its neighbour  $j$, the model becomes:  
+In the case of heterogeneous populations, such as Bulks or landraces or farmers varieties, individuals of different genotypes are neighbouring each others. So, if we introduce the fact that the phenotype of a $focal$ individual, $P_{Focal}$,  can be determined by its own genotype and by the genotypes of its neighbours, $G$ can now be decomposed into a *D*irect *G*enetic *E*ffect ($DGE$) and the $I*ndirect *G*enetic *E*ffect (IGE) from neighboring individuals, the model becomes:
+$$P_{Focal} = DGE_{Focal} + IGE_{Neignhbours} + E_{DGE_{Focal}} + E_{IGE_{Neignhbours}}$$
+Where:
+- $DGE_{Focal}$ is a Direct Genetic Effect, i.e., the direct contribution of the individual's own genotype to its own phenotype, 
+- $IGE_{Neignhbours}$ is The indirect genetic contribution of the genotypes of the neighboring individuals to the $focal$'s phenotype.  
+and, 
+- $E_{DGE_{Focal}}$ : environment effect on Direct Genetic Effect) on the focal plant
+- $E_{IGE_{Neignhbours}}$ :environment effect on Indirect Genetic Effect of the neighbouring plants
 
-$$P_{Focal_i, Neighbour_j} = DGE_{Focal_i} + IGE_{Neignhbour_j} + E_{DGE_{Focal_i}} + E_{IGE_{Neignhbour_j}}$$
-Where:  
-- $DGE_{Focal_i}$ is a Direct Genetic Effect of $i$, i.e., the direct contribution of the individual's own genotype to its own phenotype,  
-- $IGE_{Neignhbours}$ is the Indirect genetic contribution of the genotype of the neighbourc $j$  
-and,  
-- $E_{DGE_{Focal_i}}$ : environment effect on Direct Genetic Effect) on the focal plant  
-- $E_{IGE_{Neignhbour_j}}$ :environment effect on Indirect Genetic Effect of the neighbour  
+These components have their associated variances : $V_{DGE},V_{IGE}, V_{E_{DGE}}, V_{E_{IGE}}$
 
-These components have their associated variances : $V_{DGE},V_{IGE}, V_{E_{DGE}}, V_{E_{IGE}}$  
-
-Of course, any individual in an heterogeneous populations, if a individual $i$ has a $DGE_i$ it also have a $IGE_i$ than can be correlated.  
+Of course, any individual in an heterogeneous populations, if a individual $i$ has a $DGE_i$ it also have a $IGE_i$ than can be correlated. 
 
 ## Correlation between DGE and IGE
-A correlation between $DGE_i$ and $IGE_i$ will affects the overall distribution of the phenotypic values and hence the  response to selection. For a social trait, a strong competitor, $i$, can have a strong positive $DGE_i$ value while reducing the trait value of its neighbours with a negative $IGE_i$ value.  
+A correlation between $DGE_i$ and $IGE_i$ will affects the overall distribution of the phenotypic values and hence the  response to selection. 
 
-According to the trait, the correlation between the $DGE_i$ and their $IGE_i$ counterpart can theoretically vary from -1 to 1. This correlation will thus translate in the data into a covariance between the $DGE_i$ and $IGE_i$ values, denoted $cov(DGE:IGE)$ with  
+### An example with a complex neighbouring 
 
-$$r_{(DGE:IGE)}=\frac{cov(DGE:IGE)}{\sqrt{V_{DGE}V_{IGE}}}$$
+In our situation, we consider that plants are grown on a grid and any of them have 8 neighbours with it is interacting. 
 
-
-## Phenotypic variance in a complex neighbourhood 
-
-In our workshop situation, we will consider that plants are grown on a grid and any of them have 8 neighbours with which it is interacting. 
-
-```{r, echo=FALSE}
+# Charger la bibliothèque nécessaire
+```{r}
 # Create the table with a focal cell and its neighbors
 table <- matrix(c("Neighbour1", "Neighbour2", "Neighbour3",
                   "Neighbour4", "Focal", "Neighbour5",
                   "Neighbour6", "Neighbour7", "Neighbour8"),
                 nrow = 3, byrow = TRUE)
-knitr::kable(table)
 
+# Display the table using knitr::kable and kableExtra for styling
+knitr::kable(table)
 ```
 
-
-$$ \begin{split}
-P_{i, (n1..n8)} = & DGE_{i} \,+ 
-                        \\ & IGE_{n1} \, +..+ \,IGE_{n8} \,+ 
-                        \\& E_{DGE_{i}} \,+ 
-                        \\& E_{IGE_{n1}}+..+E_{IGE_{n8}}
-\end{split}$$
-
-Sinc
 
 If a mass selection is performed based on phenotypic value, the selection acts on both the individual's genotype and the genotypes of its neighbors, a concept known as the social phenotype.
 

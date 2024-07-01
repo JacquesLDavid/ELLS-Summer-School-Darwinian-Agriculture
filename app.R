@@ -25,36 +25,64 @@ ui <- fluidPage(
     sidebarPanel(
       checkboxInput("setSeed", "Set seed for reproducibility", value = FALSE),
       numericInput("seedValue", "Seed value", value = 12345),
+      tags$hr(),
       #checkboxInput("Mean","Mean effects (checked) or Sum effects (unchecked) for IGE calculation", value=TRUE),
       #checkboxInput("Asreml","Use of Asreml to make inference", value=FALSE),
-      sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 450),
+      p("WARNING:"),
+      p("Make the product of N x Rep reasonably close to 1000 at the maximum"),
+      sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 100),
       sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 100, value = 2),
+      tags$hr(),
+      p("GENETIC VARIANCES:"),
       numericInput("varG11", "Genetic variance DGE", value = 1),
       numericInput("varG22", "Genetic variance IGE", value = 0.125),
       sliderInput("r", "Genetic correlation DGE : IGE", min = -1, max = 1, value = 0, step = 0.1),
-      p("Don't fix too different environmental variances"),
-      numericInput("varE11", "Environmental variance DGE", value = 1),
-      numericInput("varE22", "Environmental variance IGE", value = 0.125),
-      div(style = "text-align: center;",
-          actionButton("goButton", "Run Simulation")
+      tags$hr(),
+      p("ENVIRONMENTAL VARIANCES:"),
+      p("WARNING : Balance environmental variances"),
+      numericInput("varE11", "DGE Environmental variance", value = 1),
+      numericInput("varE22", "IGE Environmental variance", value = 0.125),
+      div(style = "text-align: center;font-weight: bold; color: blue;",
+          actionButton("goButton",
+                       label = div(style = "color: red; font-weight: bold;", "Step 1. Run Simulation"))
       ),
+      tags$hr(),
+      p(""),
+      p("SELECTION"),
       sliderInput("p", "Selection pressure", min = 0.01, max = 1, value = 0.1, step = 0.1),          
-      sliderInput("b_DGE", "Index weight for DGE (weight for IGE = 1 - weight for DGE)", min = -1, max = 1, value = 0.5, step = 0.1),
+      sliderInput("b_DGE", "Weigth on DGE (IGE =1-DGE)", min = -1, max = 1, value = 0.5, step = 0.1),
       div(style = "text-align: center;",
-          actionButton("SelButton","Make Selection")
+          actionButton("SelButton",
+                       label = div(style = "color: red; font-weight: bold;", "Step 2. Make Simulation"))
       )
     ),
     mainPanel(
       tabsetPanel(type = "tabs",
                   tabPanel("Population characteristics", 
+                           tags$hr(),
+                           p("Relation between True Direct Genetic Effect and the True Indirect Genetic Effect"),
                            plotOutput("plotTRUE_DGE_IGE"),
+                           tags$hr(),
+                           p("Quality of estimates of DGE"),
                            plotOutput("plotTRUEvsPRED_DGE"),
+                           tags$hr(),
+                           p("Quality of estimates of iGE"),
                            plotOutput("plotTRUEvsPRED_IGE"),
+                           tags$hr(),
+                           p("Relation between estimates of DGE and IGE"),
                            plotOutput("plotPred_DGE_IGE"),
                   ),
+                  
                   tabPanel("Selection", 
+                           
+                           p("Individual Mass selection of phenotypic values"),
                            plotOutput("plotMass_differential"),
+                           p("Genetic advance on phenotypic values under mass selection"),
                            plotOutput("plotMass_Selection"),
+                           
+                           tags$hr(),
+                           tags$hr(),
+                           p("Genetic advance on phenotypic values under DGEvsIGE index selection "),
                            plotOutput("plotIndex_Selection"),
                   ),
                   
@@ -507,10 +535,7 @@ server <- function(input, output) {
     
     # Display the mean of phenotypes as an example of summary output
     output$summaryOutput <- renderText({
-      as.data.frame(summary(Modèle)$varcomp),
-      cor(pred$DGE_pred, pred$I),
-      cor(pred$IGE_pred, pred$I),
-      cor(pred$IGE_pred, pred$DGE_pred)
+      as.data.frame(summary(Modèle)$varcomp)
     })
   })
 }
