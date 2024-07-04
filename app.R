@@ -28,6 +28,7 @@ ui <- fluidPage(
       tags$hr(),
       #checkboxInput("Mean","Mean effects (checked) or Sum effects (unchecked) for IGE calculation", value=TRUE),
       #checkboxInput("Asreml","Use of Asreml to make inference", value=FALSE),
+<<<<<<< Updated upstream
       p("WARNING:"),
       p("Make the product of N x Rep reasonably close to 1000 at the maximum"),
       sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 100),
@@ -45,6 +46,18 @@ ui <- fluidPage(
       div(style = "text-align: center;font-weight: bold; color: blue;",
           actionButton("goButton",
                        label = div(style = "color: red; font-weight: bold;", "Step 1. Run Simulation"))
+=======
+      sliderInput("N", "Number of genotypes (N)", min = 9, max = 500, value = 25),
+      sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 100, value = 1),
+      sliderInput("N_sim","Number of simulations with the same parameters",min=1,max=1000,value=1),
+      numericInput("varG11", "Genetic variance DGE", value = 1),
+      numericInput("varG22", "Genetic variance IGE", value = 0.125),
+      sliderInput("r", "Genetic correlation DGE : IGE", min = -1, max = 1, value = 0, step = 0.1),
+      numericInput("varE11", "Environmental variance DGE", value = 0.01),
+      numericInput("varE22", "Environmental variance IGE", value = 0.01),
+      div(style = "text-align: center;",
+          actionButton("goButton", "Run Simulation")
+>>>>>>> Stashed changes
       ),
       tags$hr(),
       p(""),
@@ -85,6 +98,37 @@ ui <- fluidPage(
                            p("Genetic advance on phenotypic values under DGEvsIGE index selection "),
                            plotOutput("plotIndex_Selection"),
                   ),
+<<<<<<< Updated upstream
+=======
+                  tabPanel("Summary",
+                           div(style = "text-align: center;",
+                               h2("Before selection"),
+                               h4("TRUE Mean and Variance parammeters"),
+                               tableOutput("table_TrueOutput"),
+                               br(),
+                               h4("Variance Table"),
+                               div(class = "table-container",
+                                   tableOutput("tableOutput")
+                               ),
+                               br(),
+                               h4("Correlation Values"),
+                               textOutput("TRUECorTRUE_DGE_IGE"),
+                               textOutput("TRUECorTRUE_DGE_PRED_DGE"),
+                               textOutput("TRUECorTRUE_IGE_PRED_IGE"),
+                               textOutput("TRUECorPRED_DGE_PRED_IGE"),
+                               br(),
+                               h2("After selection"),
+                               br(),
+                               h3("Mass Selection"),
+                               tableOutput("table_selOutput"),
+                               br(),
+                               h3("Index selection"),
+                               tableOutput("table_sel_IOutput"),
+                               
+                           ),
+                           
+                  )
+>>>>>>> Stashed changes
                   
                   
                   tabPanel("Summary", textOutput("summaryOutput"))
@@ -120,18 +164,48 @@ server <- function(input, output) {
       Asreml=FALSE
     }
     
-    # V_env_DGE=0.1
+    # Fonction pour compter les voisins en utilisant des décalages
+    count_neighbors <- function(mat) {
+      n_row <- nrow(mat)
+      n_col <- ncol(mat)
+      offsets <- expand.grid(di = c(-1, 0, 1), dj = c(-1, 0, 1))
+      offsets <- offsets[!(offsets$di == 0 & offsets$dj == 0), ]
+      
+      unique_genotypes <- unique(mat)
+      neighbor_counts <- array(0, dim = c(n_row, n_col, length(unique_genotypes)))
+      dimnames(neighbor_counts)[[3]] <- unique_genotypes
+      
+      for (k in 1:nrow(offsets)) {
+        ni <- (row(mat) + offsets$di[k] - 1) %% n_row + 1
+        nj <- (col(mat) + offsets$dj[k] - 1) %% n_col + 1
+        for (i in 1:n_row) {
+          for (j in 1:n_col) {
+            current_genotype <- mat[ni[i, j], nj[i, j]]
+            if (!is.na(match(current_genotype, unique_genotypes))) {
+              neighbor_counts[i, j, match(current_genotype, unique_genotypes)] <- neighbor_counts[i, j, match(current_genotype, unique_genotypes)] + 1
+            }
+          }
+        }
+      }
+      
+      neighbor_counts
+    }
+    assign("count_neighbors",count_neighbors,globalenv())
+    
+    # V_env_DGE=0
     # V_env_IGE=0
-    # V_geno=0.75
+    # V_geno=1
     # V_voisin=V_geno
-    # cor_geno_voisin=-0.6
+    # cor_geno_voisin=0
     # cov_geno_voisin=cor_geno_voisin*sqrt(V_geno*V_voisin)
     # N_geno=25
-    # N_rep=75
+    # N_rep=1
     # b_DGE=0.5
     # p=0.1
+    # N_sim=5
+    # Mean=FALSE
     
-    V_env_DGE=input$varE11
+    V_env_DGE=input$varE11 
     V_env_IGE=input$varE22
     V_geno=input$varG11
     V_voisin=input$varG22
@@ -139,9 +213,9 @@ server <- function(input, output) {
     cov_geno_voisin=cor_geno_voisin*sqrt(V_geno*V_voisin)
     N_geno=input$N
     N_rep=input$rep
+    N_sim=input$N_sim
     N_row=N_col=0
     
-    c=0
     if (ceiling(sqrt(N_geno*N_rep))!=sqrt(N_geno*N_rep)){
       N_row=N_col=ceiling(sqrt(N_geno*N_rep))
     }
@@ -156,15 +230,20 @@ server <- function(input, output) {
     assign("Mean",Mean,envir = globalenv())
     assign("Asreml",Asreml,envir=globalenv())
     
-    mu=c(0,0)
-    assign("mu",mu,envir = globalenv())
+    SIM <- c()
+    calc_SIM <- c()
     
-    G=matrix(c(V_geno,cov_geno_voisin,
-               cov_geno_voisin,V_voisin),
-             ncol=2,nrow=2)
+    # Pré-allocation
+    mu <- c(0, 0)
+    G <- matrix(c(V_geno, cov_geno_voisin, cov_geno_voisin, V_voisin), ncol=2, nrow=2)
+    E <- matrix(c(V_env_DGE, 0, 0, V_env_IGE), ncol=2, nrow=2)
+    P <- G + E
     
-    assign("G",G,envir = globalenv())
+    Focal <- sprintf("G%03d", 1:N_geno)
+    rep <- sprintf("%03d", 1:N_rep)
+    grid <- expand.grid(Row = 1:N_row, Column = 1:N_col)
     
+<<<<<<< Updated upstream
     E=matrix(c(V_env_DGE,0,0,V_env_IGE), ncol=2,nrow=2)
     
     assign("E",E,envir = globalenv())
@@ -197,32 +276,70 @@ server <- function(input, output) {
       for (j in 1:(ncol(mat_grid)-2)){
         if (!is_empty(DATA[(DATA$Row==i&DATA$Column==j),"Focal"])){
           mat_grid[i+1,j+1]=DATA[(DATA$Row==i&DATA$Column==j),"Focal"]
+=======
+    for (i in 1:N_sim) {
+      print(i)
+      
+      df <- mvrnorm(n = N_geno, mu, G)
+      colnames(df) <- c("DGE", "IGE")
+      df_E <- mvrnorm(n = (N_geno * N_rep), mu, E)
+      
+      DGE <- df[, 1]
+      IGE <- df[, 2]
+      
+      DATA <- expand.grid(Focal = Focal, rep = rep)
+      grid_indices <- sample(N_row * N_col, N_geno * N_rep, replace = FALSE)
+      grid_sample <- grid[grid_indices, ]
+      DATA <- cbind(DATA,grid_sample)
+      
+      mat_grid <- matrix("vide", nrow = N_row, ncol = N_col)
+      mat_grid[cbind(grid_sample$Row, grid_sample$Column)] <- as.character(DATA$Focal)
+      
+      empty_positions <- which(mat_grid == "vide", arr.ind = TRUE)
+      mat_grid[empty_positions] <- sample(DATA$Focal, nrow(empty_positions), replace = TRUE)
+      
+      neighbor_counts <- count_neighbors(mat_grid)
+      
+      DATA <- cbind(matrix(0, nrow = nrow(DATA), ncol = length(Focal)), DATA)
+      colnames(DATA)[1:N_geno] <- Focal
+      
+      for (k in 1:nrow(DATA)) {
+        i <- DATA$Row[k]
+        j <- DATA$Column[k]
+        for (geno in Focal) {
+          if (geno %in% dimnames(neighbor_counts)[[3]]) {
+            DATA[k, geno] <- neighbor_counts[i, j, geno]
+          }
+>>>>>>> Stashed changes
         }
       }
-    }
-    mat_grid[grep(mat_grid,pattern="vide")]=sample(DATA$Focal,length(mat_grid[grep(mat_grid,pattern="vide")]))
-    
-    matrice_voisin=matrix(0,nrow = N_geno*N_rep,ncol=N_geno,dimnames = list(1:(N_geno*N_rep),unique(DATA$Focal)))
-    DATA=cbind(matrice_voisin,DATA,data.frame("vide"=NA))
-    
-    for (i in 2:(nrow(mat_grid)-1)){
-      for (j in 2:(ncol(mat_grid)-1)){
-        if (!is_empty(DATA[(DATA$Row==(i-1)&DATA$Column==(j-1)),"Focal"])){
-          DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i-1,j-1]]=DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i-1,j-1]]+1
-          DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i,j-1]]=DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i,j-1]]+1
-          DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i+1,j-1]]=DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i+1,j-1]]+1
-          DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i-1,j]]=DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i-1,j]]+1
-          DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i+1,j]]=DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i+1,j]]+1
-          DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i-1,j+1]]=DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i-1,j+1]]+1
-          DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i,j+1]]=DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i,j+1]]+1
-          DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i+1,j+1]]=DATA[DATA$Row==(i-1)&DATA$Column==(j-1),mat_grid[i+1,j+1]]+1
-        }
+      
+      Zg <- model.matrix(~Focal - 1, DATA)
+      dimnames(Zg)[[2]] <- paste0("G", sprintf("%03d", 1:N_geno))
+      
+      if (Mean) {
+        Zv <- as.matrix(DATA[, 1:N_geno]) / 8
+        DATA[, 1:N_geno] <- Zv
+      } else {
+        Zv <- as.matrix(DATA[, 1:N_geno])
       }
+      
+      Pheno <- Zg %*% DGE + Zv %*% IGE + df_E[, 1] + df_E[, 2]
+      
+      SIM <- c(SIM,var(Pheno))
+      calc_SIM <- c(calc_SIM,round(var(Pheno)+
+                             8 * 7 * mean(tcrossprod(IGE)) * var(IGE) / (N_col * N_row)+
+                             2*8*mean(tcrossprod(IGE+DGE)) * cov(DGE, IGE) / (N_col * N_row)
+                           + (30*var(IGE)+16*cov(DGE,IGE))/(N_col*N_row), 3))
+      assign("SIM",SIM,globalenv())
     }
     
-    Zg=model.matrix(~Focal-1,DATA)
-    dimnames(Zg)[[2]]=paste0("G",sprintf("%03d", 1:N_geno))
+    TABLE_TRUE <- data.frame(
+      "Effect" = c("DGE", "IGE", "Pheno", "calc_SIM"),
+      "Variance" = c(V_geno, V_voisin, mean(SIM), mean(calc_SIM))
+    )
     
+<<<<<<< Updated upstream
     if(Mean==TRUE){
       Zv=as.matrix(DATA[,1:N_geno])/8
       DATA[,1:N_geno]=Zv
@@ -240,15 +357,21 @@ server <- function(input, output) {
     DATA$Pheno=as.vector(Pheno)
     DATA$Focal=as.factor(DATA$Focal)
     
+=======
+    output$table_TrueOutput <- renderTable({
+      TABLE_TRUE
+    })
+    
+    DATA$Pheno <- as.vector(Pheno)
+    DATA$Focal <- as.factor(DATA$Focal)
+>>>>>>> Stashed changes
     
     # mass phenotypic selection
-    DATA$Pheno=as.vector(Pheno)
-    DATA$Focal=as.factor(DATA$Focal)
+    DATA$Pheno <- as.vector(Pheno)
+    DATA$Focal <- as.factor(DATA$Focal)
     
-    assign("DATA",DATA,envir = globalenv())
-    assign("N_geno",N_geno,envir = globalenv())
-    assign("Pheno",Pheno,envir = globalenv())
     # Estimation of BLUP 
+<<<<<<< Updated upstream
     if (Asreml){
       Modèle=asreml(fixed = Pheno~1,
                     random = ~str(~Focal+grp(Voisin),~us(2):id(Focal)),
@@ -306,6 +429,41 @@ server <- function(input, output) {
         ggtitle("DGE vs. IGE")+
         theme_bw()
     })
+=======
+    if (Asreml) {
+      Mod <- try(asreml(fixed = Pheno ~ 1,
+                        random = ~str(~Focal + grp(Voisin), ~us(2):id(Focal)),
+                        group = list(Voisin = 1:N_geno),
+                        residual = ~units,
+                        data = DATA))
+      
+      tmp_DGE <- data.frame("DGE_pred" = summary(Mod, coef = TRUE)$coef.random[1:N_geno, 1],
+                            "Focal" = str_split(names(summary(Mod, coef = TRUE)$coef.random[1:N_geno, 1]), pattern = "_", simplify = TRUE)[, 2])
+      tmp_IGE <- data.frame("IGE_pred" = summary(Mod, coef = TRUE)$coef.random[(N_geno + 1):(2 * N_geno), 1],
+                            "Focal" = str_split(names(summary(Mod, coef = TRUE)$coef.random[1:N_geno, 1]), pattern = "_", simplify = TRUE)[, 2])
+      pred <- merge(tmp_DGE, tmp_IGE, by = "Focal")
+    } else {
+      Mod <- try(mmer(fixed = Pheno ~ 1,
+                      random = ~vsr(Focal) + vsr(Zv),
+                      rcov = ~units,
+                      data = DATA, nIters = 4))
+      
+      if (length(Mod) < 3) {
+        Mod <- NA
+        pred <- NA
+      } else {
+        DGE_pred <- data.frame("Focal" = names(randef(Mod)$`u:Focal`$Pheno), "DGE_pred" = as.numeric(randef(Mod)$`u:Focal`[[1]]))
+        IGE_pred <- data.frame("Focal" = names(randef(Mod)$`u:Focal`$Pheno), "IGE_pred" = as.numeric(randef(Mod)$`u:Zv`[[1]]))
+        pred <- merge(DGE_pred, IGE_pred, by = "Focal")
+      }
+    }
+    
+    # assign("DATA", DATA, envir = globalenv())
+    # assign("N_geno", N_geno, envir = globalenv())
+    # assign("Pheno", Pheno, envir = globalenv())
+    
+    
+>>>>>>> Stashed changes
   })
   observeEvent(input$SelButton,{
     b_DGE=input$b_DGE
@@ -386,6 +544,28 @@ server <- function(input, output) {
     
     Pheno_sel_I=Zg_sel_I%*%DGE_sel_I+Zv_sel_I%*%IGE_sel_I+df_E_sel_I[,1]+df_E_sel_I[,2]
     
+<<<<<<< Updated upstream
+=======
+    TABLE_sel_I=data.frame("Effect"=c("DGE",'IGE',"Env_DGE","Env_IGE","Pheno"),
+                           "Variance"=c(round(var(Zg_sel_I%*%DGE_sel_I),3),
+                                        round(var(Zg_sel_I%*%IGE_sel_I),3),
+                                        round(var(df_E_sel_I[,1]),3),
+                                        round(var(df_E_sel_I[,2]),3),
+                                        var(Pheno_sel_I)),
+                           "Mean"=c(round(mean(Zg_sel_I%*%DGE_sel_I),3),
+                                    round(mean(Zg_sel_I%*%IGE_sel_I),3),
+                                    round(mean(df_E_sel_I[,1]),3),
+                                    round(mean(df_E_sel_I[,2]),3),
+                                    mean(Pheno_sel_I)),
+                           "Response_to_selection"=c(R_I[1],R_I[2],NA,NA,NA))
+    
+    
+    
+    output$table_sel_IOutput <- renderTable({
+      TABLE_sel_I
+    })
+    
+>>>>>>> Stashed changes
     # Combine the two vectors into a dataframe
     combinedData_I <- rbind(data.frame(Value = Pheno, Phase = "Before selection"),
                             data.frame(Value = Pheno_sel_I, Phase = "After selection"))
@@ -504,6 +684,28 @@ server <- function(input, output) {
     
     Pheno_sel=Zg_sel%*%DGE_sel+Zv_sel%*%IGE_sel+df_E_sel[,1]+df_E_sel[,2]
     
+<<<<<<< Updated upstream
+=======
+    TABLE_sel=data.frame("Effect"=c("DGE",'IGE',"Env_DGE","EnvGE","Pheno"),
+                         "Variance"=c(round(var(Zg_sel%*%DGE_sel),3),
+                                      round(var(Zg_sel%*%IGE_sel),3),
+                                      round(var(df_E_sel[,1]),3),
+                                      round(var(df_E_sel[,2]),3),
+                                      var(Pheno_sel)),
+                         "Mean"=c(round(mean(Zg_sel%*%DGE_sel),3),
+                                  round(mean(Zg_sel%*%IGE_sel),3),
+                                  round(mean(df_E_sel[,1]),3),
+                                  round(mean(df_E_sel[,2]),3),
+                                  mean(Pheno_sel)),
+                         "Response_to_selection"=c(R[1],R[2],NA,NA,NA))
+    
+    
+    
+    output$table_selOutput <- renderTable({
+      TABLE_sel
+    })
+    
+>>>>>>> Stashed changes
     # Combine the two vectors into a dataframe
     combinedData <- rbind(data.frame(Value = Pheno, Phase = "Before selection"),
                           data.frame(Value = Pheno_sel, Phase = "After selection"))
