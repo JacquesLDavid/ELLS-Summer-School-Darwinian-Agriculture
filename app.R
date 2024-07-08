@@ -15,6 +15,7 @@ library(sommer)
 library(data.table)
 library(tidyverse)
 library(shinycssloaders)
+library(corrplot)
 
 
 
@@ -70,43 +71,26 @@ ui <- fluidPage(
                            div(style = "text-align: center;",
                                h2("Before selection"),
                                h4("TRUE Mean and Variance parammeters"),
-                               textOutput("TRUEVarOutputDGE"),
-                               textOutput("TRUEMeanOutputDGE"),
-                               textOutput("TRUEVarOutputIGE"),
-                               textOutput("TRUEMeanOutputIGE"),
-                               textOutput("TRUEVarOutputEnv_DGE"),
-                               textOutput("TRUEMeanOutputEnv_DGE"),
-                               textOutput("TRUEVarOutputEnv_IGE"),
-                               textOutput("TRUEMeanOutputEnv_IGE"),
-                               textOutput("MeanPheno"),
-                               textOutput("VarPheno"),
                                br(),
                                h4("Variance Table"),
                                div(class = "table-container",
-                                   tableOutput("tableOutput")
+                                   tableOutput("table_TrueOutput")
                                ),
                                br(),
                                h4("Correlation Values"),
-                               textOutput("TRUECorTRUE_DGE_IGE"),
-                               textOutput("TRUECorTRUE_DGE_PRED_DGE"),
-                               textOutput("TRUECorTRUE_IGE_PRED_IGE"),
-                               textOutput("TRUECorPRED_DGE_PRED_IGE"),
+                               plotOutput("corrplot"),
                                br(),
                                h2("After selection"),
                                br(),
                                h3("Mass Selection"),
-                               textOutput("MeanPhenoSel"),
-                               textOutput("VarPhenoSel"),
-                               textOutput("SelectionDifferential_DGE"),
-                               textOutput("SelectionDifferential_IGE"),
-                               textOutput("SelectionResponse_DGE"),
-                               textOutput("SelectionResponse_IGE"),
+                               div(class = "table-container",
+                                   tableOutput("table_True_selOutput")
+                               ),
                                br(),
                                h3("Index selection"),
-                               textOutput("MeanPhenoSel_I"),
-                               textOutput("VarPhenoSel_I"),
-                               textOutput("SelectionResponse_DGE_I"),
-                               textOutput("SelectionResponse_IGE_I")
+                               div(class = "table-container",
+                                   tableOutput("table_True_sel_IOutput")
+                               ),
                                
                            ),
                            
@@ -209,8 +193,15 @@ server <- function(input, output) {
     assign("Mean",Mean,envir = globalenv())
     assign("Asreml",Asreml,envir=globalenv())
     
-    SIM <- numeric(N_sim)
-    calc_SIM <- numeric(N_sim)
+    SIM <- c()
+    calc_SIM <- c()
+    SIM_DGE=c()
+    SIM_IGE=c()
+    SIM_cov=c()
+    
+    SIM_mean <- c()
+    SIM_mean_DGE=c()
+    SIM_mean_IGE=c()
     
     # Pré-allocation
     mu <- c(0, 0)
@@ -283,13 +274,21 @@ server <- function(input, output) {
       
       Pheno <- Zg %*% DGE + Zv %*% IGE + df_E[, 1] + df_E[, 2]
       
-      SIM[i] <- var(Pheno)
-      calc_SIM[i] <- round(var(DGE) + 8 * var(IGE) + 8 * mean(tcrossprod(IGE + DGE)) * (2 * cov(DGE, IGE) + 7 * var(IGE)) / (N_col * N_row), 3)
+      SIM <- c(SIM,var(Pheno))
+      calc_SIM <- c(calc_SIM,round(var(DGE) + 8 * var(IGE) + 8 * mean(tcrossprod(IGE + DGE)) * (2 * cov(DGE, IGE) + 7 * var(IGE)) / (N_col * N_row), 3))
+      SIM_cov=c(SIM_cov,cov(DGE,IGE))
+      SIM_DGE=c(SIM_DGE,var(DGE))
+      SIM_IGE=c(SIM_IGE,var(IGE))
+      
+      SIM_mean <- c(SIM_mean,mean(Pheno))
+      SIM_mean_DGE=c(SIM_mean_DGE,mean(DGE))
+      SIM_mean_IGE=c(SIM_mean_IGE,mean(IGE))
     }
     
     TABLE_TRUE <- data.frame(
-      "Effect" = c("DGE", "IGE", "Pheno", "calc_SIM"),
-      "Variance" = c(V_geno, V_voisin, mean(SIM), mean(calc_SIM))
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno", "calc_SIM"),
+      "Variance" = c(mean(SIM_DGE), mean(SIM_IGE), mean(SIM_cov),mean(SIM), mean(calc_SIM)),
+      "Mean"=c(mean(SIM_mean_DGE),mean(SIM_mean_IGE),NA,mean(SIM_mean),NA)
     )
     
     output$table_TrueOutput <- renderTable({
@@ -351,8 +350,11 @@ server <- function(input, output) {
     assign("Zg",Zg,globalenv())
     assign("Zv", Zv, envir = globalenv())
     
-    
+    output$corrplot=renderPlot({
+      corrplot::corrplot(cor(data.frame("TRUE_DGE"=DGE,"TRUE_IGE"=IGE,"PRED_DGE"=pred$DGE_pred,"PRED_IGE"=pred$IGE_pred)),type = "lower")
+    })
   })
+  
   observeEvent(input$SelButton,{
     b_DGE=input$b_DGE
     p<-input$p
@@ -438,6 +440,17 @@ server <- function(input, output) {
         theme_minimal() +
         theme(legend.title = element_blank())+
         annotate("text",x=mean_after_sel_I+1.5,y=0.3,label=paste0('Delta_mu_pheno = ', mean_after_sel_I - mean_before_sel_I))# Remove the legend title
+    })
+    
+    
+    TABLE_TRUE_sel_I <- data.frame(
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno", "calc_SIM"),
+      "Variance" = c(var(DGE_sel_I), var(IGE_sel_I), cov(DGE_sel_I,IGE_sel_I),var(Pheno_sel_I), round(var(DGE_sel_I) + 8 * var(IGE_sel_I) + 8 * mean(tcrossprod(IGE_sel_I + DGE_sel_I)) * (2 * cov(DGE_sel_I, IGE_sel_I) + 7 * var(IGE_sel_I)) / (N_col * N_row), 3)),
+      "Mean"=c(mean(DGE_sel_I),mean(IGE_sel_I),NA,mean(Pheno_sel_I),NA)
+    )
+    
+    output$table_True_sel_IOutput <- renderTable({
+      TABLE_TRUE_sel_I
     })
     
     ###Mass selection
@@ -545,6 +558,16 @@ server <- function(input, output) {
         theme(legend.title = element_blank())+# Remove the legend title
         annotate("text",x=mean_after_sel+1.5,y=0.3,label=paste0('Delta_mu_pheno = ', mean_after_sel - mean_before_sel))# Remove the legend title
       
+    })
+    
+    TABLE_TRUE_sel <- data.frame(
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno", "calc_SIM"),
+      "Variance" = c(var(DGE_sel), var(IGE_sel), cov(DGE_sel,IGE_sel),var(Pheno_sel), round(var(DGE_sel) + 8 * var(IGE_sel) + 8 * mean(tcrossprod(IGE_sel + DGE_sel)) * (2 * cov(DGE_sel, IGE_sel) + 7 * var(IGE_sel)) / (N_col * N_row), 3)),
+      "Mean"=c(mean(DGE_sel),mean(IGE_sel),NA,mean(Pheno_sel),NA)
+    )
+    
+    output$table_True_selOutput <- renderTable({
+      TABLE_TRUE_sel
     })
     
   })
