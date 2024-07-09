@@ -1,0 +1,665 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={2024 ELLS summer school Darwinian agriculture},
+  pdfauthor={Jacques David, Nicolas Salas, Peter Bourke},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{2024 ELLS summer school Darwinian agriculture}
+\usepackage{etoolbox}
+\makeatletter
+\providecommand{\subtitle}[1]{% add subtitle to \maketitle
+  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
+}
+\makeatother
+\subtitle{Workshop Social evolution under mass selection or under true
+breeding values}
+\author{Jacques David, Nicolas Salas, Peter Bourke}
+\date{2024-06-20}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}\label{introduction}
+
+Welcome to this practical session on the decomposition of phenotypic
+value and the effects of selection. In this session, we will explore how
+the phenotypic value of a plant is influenced by its genotype and by the
+genotypes of its neighbors, and how selection on these traits affects
+the next generation.
+
+\section{Key theoretical Concepts}\label{key-theoretical-concepts}
+
+find the ref Bijma , Muir etc
+
+\subsection{Decomposition of the Phenotypic
+Value}\label{decomposition-of-the-phenotypic-value}
+
+Classically, in one single macro-environment, the phenotypic value
+(\(P\)) of an individual can be decomposed into multiple components:
+\[ P = G + E \]\\
+Where:\\
+- \textbf{G} represents the genetic contribution to the phenotype,\\
+- \textbf{E} represents the micro-environmental contribution to the
+phenotype.
+
+Let's rigorously derive the total phenotypic variance \(V_P\) where the
+phenotypes may not independent, either because of genetic relatedness or
+structured environment.
+
+Consider the phenotype \(P_i\) of an individual \(i\), influenced by its
+genetic effect (\(G_i\)) and its direct environmental effect (\(e_i\)):
+\(P_i = G_i + e_i\)
+
+\subsection{Non-Independent
+Phenotypes}\label{non-independent-phenotypes}
+
+Consider the phenotype \(P_i\) of an individual \(i\),
+\(P_i = G_i + e_i\),
+
+where \(G_i\) is the genetic effect and \(e_i\) is the environmental
+effect.
+
+For the sake of simplicity, let'use centered value of \(P\), with so
+that \(E(P)=E(G)=E(e)=0\), and
+\(V_P=E(P_i^2); V_G=E(G_i^2) ; V_e=E(e_i^2)\)
+
+The total phenotypic variance is defined as:
+
+\(V_P = E(P_i)^2\)
+
+First, we need to determine \(E(P_i)\):
+
+\$E(P) = \frac{1}{n} \sum\_\{i=1\}\^{}n P\_i \$
+
+where \(n\) is the number of individuals.
+
+\[\begin{split}
+E(P_i-\frac{1}{n} \sum_{i=1}^n P_i )^2 &= E(P_i-\frac{1}{n} (P_i+..+P_j ))^2\\
+&=E(P_i - \frac{1}{n}(P_iP_j + P_j + P_jP_i..))^2
+\end{split}\]
+
+Next, let's calculate \(E(P^2)\):
+
+\(P^2 = \left( \frac{1}{n} \sum_{i=1}^n P_i \right)^2 = \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n P_i P_j\)
+
+Taking the expectation:
+
+\[ E(P^2) = \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n E(P_i P_j) \]
+
+\paragraph{\texorpdfstring{Step 3: Calculate
+\(E(P_i P_j)\)}{Step 3: Calculate E(P\_i P\_j)}}\label{step-3-calculate-ep_i-p_j}
+
+We know:
+
+\[ E(P_i P_j) = E((G_i + e_i)(G_j + e_j)) \]
+\[ = E(G_i G_j) + E(G_i e_j) + E(e_i G_j) + E(e_i e_j) \]
+
+Given that \(G_i\) and \(e_i\) are independent and have zero means,
+\(E(G_i e_j) = E(e_i G_j) = 0\). If \(e_i\) and \(e_j\) are also
+independent, \(E(e_i e_j) = 0\). Thus:
+
+\[ E(P_i P_j) = E(G_i G_j) \]
+
+\paragraph{\texorpdfstring{Step 4: Total Phenotypic Variance
+\(V(P)\)}{Step 4: Total Phenotypic Variance V(P)}}\label{step-4-total-phenotypic-variance-vp}
+
+\[ V(P) = E(P^2) - (E(P))^2 \]
+
+Since \(E(P) = 0\):
+
+\[ V(P) = E(P^2) \]
+\[ = \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n E(P_i P_j) \]
+\[ = \frac{1}{n^2} \left( \sum_{i=1}^n E(P_i^2) + \sum_{i \neq j} E(P_i P_j) \right) \]
+
+From earlier, we have:
+
+\[ E(P_i^2) = \text{Var}(P_i) = \text{Var}(G_i) + \text{Var}(e_i) \]
+\[ E(P_i P_j) = \text{Cov}(G_i, G_j) \]
+
+Thus:
+
+\[ V(P) = \frac{1}{n^2} \left( n (\text{Var}(G) + \text{Var}(e)) + n(n-1) \text{Cov}(G_i, G_j) \right) \]
+\[ = \frac{1}{n} (\text{Var}(G) + \text{Var}(e)) + \frac{n-1}{n} \text{Cov}(G_i, G_j) \]
+
+Given that we typically separate the genetic and environmental variances
+and their covariances, we can simplify this to:
+
+\[ V(P) = \text{Var}(G) + \text{Var}(e) + \text{Cov}(G_i, G_j) \]
+
+\subsubsection{Conclusion}\label{conclusion}
+
+The total phenotypic variance \(V(P)\) is:
+
+\[ V(P) = V_G + V_e + \text{Cov}(G_i, G_j) \]
+
+This expression correctly separates the genetic variance (\(V_G\)), the
+environmental variance (\(V_e\)), and the covariance between the genetic
+effects of different individuals (\(\text{Cov}(G_i, G_j)\)). This
+approach ensures that all sources of variation and their interactions
+within the population are accounted for. \#\# What happens if Phenotypes
+are not independent
+
+Now write E(Pi - 1/n)
+
+consider the covariance between two phenotypes \(P_i\) and \(P_j\):
+
+\[ \text{Cov}(P_i, P_j) = E[P_i P_j] - E[P_i]E[P_j] \]
+
+Given that \(E(P_i) = 0\) and \(E(P_j) = 0\), we have:
+
+\[ \text{Cov}(P_i, P_j) = E[P_i P_j] \]
+
+Let's expand \(P_i P_j\):
+
+\[ P_i P_j = (DGE_i + e_i)(DGE_j + e_j) = DGE_i DGE_j + DGE_i e_j + e_i DGE_j + e_i e_j \]
+
+Taking the expectation:
+
+\[ E[P_i P_j] = E[DGE_i DGE_j] + E[DGE_i e_j] + E[e_i DGE_j] + E[e_i e_j] \]
+
+Again, since \(DGE\) and \(e\) are independent,
+\(E[DGE_i e_j] = E[e_i DGE_j] = 0\). If \(e_i\) and \(e_j\) are also
+independent, \(E[e_i e_j] = 0\). Thus:
+
+\[ E[P_i P_j] = E[DGE_i DGE_j] \]
+
+So:
+
+\[ \text{Cov}(P_i, P_j) = \text{Cov}(DGE_i, DGE_j) \]
+
+\subsubsection{Total Phenotypic
+Variance}\label{total-phenotypic-variance}
+
+When considering the total phenotypic variance for a population, we need
+to include both the variance of individual phenotypes and the
+covariances between different phenotypes. The total phenotypic variance
+\(V(P)\) is given by:
+
+\[ V(P) = \sum_i \text{Var}(P_i) + \sum_{i \neq j} 2 \cdot \text{Cov}(P_i, P_j) \]
+
+\paragraph{Putting It All Together}\label{putting-it-all-together}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Variance of \(P_i\)}:
+  \[ \text{Var}(P_i) = \text{Var}(DGE_i) + \text{Var}(e_i) \]
+\item
+  \textbf{Covariance between \(P_i\) and \(P_j\)}:
+  \[ \text{Cov}(P_i, P_j) = \text{Cov}(DGE_i, DGE_j) \]
+\end{enumerate}
+
+So, the total phenotypic variance \(V(P)\) is:
+
+\[ V(P) = \sum_i \left( \text{Var}(DGE_i) + \text{Var}(e_i) \right) + \sum_{i \neq j} 2 \cdot \text{Cov}(DGE_i, DGE_j) \]
+
+Given that we are taking expectations, the final formula can be written
+as:
+
+\[ V(P) = N \left( \mathbb{E}[\text{Var}(DGE)] + \mathbb{E}[\text{Var}(e)] \right) + N(N-1) \cdot 2 \cdot \mathbb{E}[\text{Cov}(DGE_i, DGE_j)] \]
+
+where \(N\) is the number of individuals.
+
+\subsubsection{Conclusion}\label{conclusion-1}
+
+In the classic case, the total phenotypic variance \(V(P)\) includes: -
+The variances of the direct genetic effects and environmental effects of
+individuals. - The covariance between the direct genetic effects of
+different individuals, counted twice because each pairwise interaction
+contributes to the total variance.
+
+This thorough approach ensures that we account for all sources of
+variation and their interactions within the population.
+
+``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,``\,''
+
+In the case of heterogeneous populations, such as Bulks or landraces or
+farmers varieties, individuals of different genotypes are neighbouring
+each others. So, if we introduce the fact that the phenotype of a
+\(focal\) individual, \(i\), \(P_{Focal_i}\), can be determined by its
+own genotype and by the genotype of its neighbour, \(j\),
+\(P_{Focal_i, Neighbour_j}\) can now be decomposed into a Direct Genetic
+Effect (\(DGE\)) due to \(i\) and the Indirect Genetic Effect (\(IGE\))
+from its neighbour \(j\), the model becomes:
+
+\[P_{Focal_i, Neighbour_j} = DGE_{Focal_i} + IGE_{Neignhbour_j} + E_{DGE_{Focal_i}} + E_{IGE_{Neignhbour_j}}\]
+Where:\\
+- \(DGE_{Focal_i}\) is a Direct Genetic Effect of \(i\), i.e., the
+direct contribution of the individual's own genotype to its own
+phenotype,\\
+- \(IGE_{Neignhbours}\) is the Indirect genetic contribution of the
+genotype of the neighbourc \(j\)\\
+and,\\
+- \(E_{DGE_{Focal_i}}\) : environment effect on Direct Genetic Effect)
+on the focal plant\\
+- \(E_{IGE_{Neignhbour_j}}\) :environment effect on Indirect Genetic
+Effect of the neighbour
+
+These components have their associated variances :
+\(V_{DGE},V_{IGE}, V_{E_{DGE}}, V_{E_{IGE}}\)
+
+Of course, any individual in an heterogeneous populations, if a
+individual \(i\) has a \(DGE_i\) it also have a \(IGE_i\) than can be
+correlated.
+
+\subsection{Correlation between DGE and
+IGE}\label{correlation-between-dge-and-ige}
+
+A correlation between \(DGE_i\) and \(IGE_i\) will affects the overall
+distribution of the phenotypic values and hence the response to
+selection. For a social trait, a strong competitor, \(i\), can have a
+strong positive \(DGE_i\) value while reducing the trait value of its
+neighbours with a negative \(IGE_i\) value.
+
+According to the trait, the correlation between the \(DGE_i\) and their
+\(IGE_i\) counterpart can theoretically vary from -1 to 1. This
+correlation will thus translate in the data into a covariance between
+the \(DGE_i\) and \(IGE_i\) values, denoted \(cov(DGE:IGE)\) with
+
+\[r_{(DGE:IGE)}=\frac{cov(DGE:IGE)}{\sqrt{V_{DGE}V_{IGE}}}\]
+
+\subsection{Phenotypic variance in a complex
+neighbourhood}\label{phenotypic-variance-in-a-complex-neighbourhood}
+
+In our workshop situation, we will consider that plants are grown on a
+grid and any of them have 8 neighbours with which it is interacting.
+
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Neighbour1 & Neighbour2 & Neighbour3 \\
+Neighbour4 & Focal & Neighbour5 \\
+Neighbour6 & Neighbour7 & Neighbour8 \\
+\end{longtable}
+
+\[ \begin{split}
+P_{i, (n1..n8)} = & DGE_{i} \,+ 
+                        \\ & IGE_{n1} \, +..+ \,IGE_{n8} \,+ 
+                        \\& E_{DGE_{i}} \,+ 
+                        \\& E_{IGE_{n1}}+..+E_{IGE_{n8}}
+\end{split}\]
+
+To calculate the total phenotypic variance \(V_P\), we may recall the
+usual case where \(P=G+E\) when the phenotypic values can be considered
+as independent when the genotypes are not related and when there is no
+particular structured environment. In this case \$V\_P = V\_P + \$
+
+If a mass selection is performed based on phenotypic value, the
+selection acts on both the individual's genotype and the genotypes of
+its neighbors, a concept known as the social phenotype.
+
+\subparagraph{True Breeding Value (TBV)}\label{true-breeding-value-tbv}
+
+The true breeding value (TBV) integrates both DGE and IGE. It is an
+important metric for predicting the genetic value of the next
+generation, particularly when social interactions are considered. The
+TBV is influenced by the correlation between DGE and IGE and can be
+calculated as: \[ TBV = DGE + \sum IGE \] where \(\sum IGE\) represents
+the sum of the indirect genetic effects from all relevant neighbors.
+
+\subparagraph{Environmental Effects}\label{environmental-effects}
+
+Environmental effects (\(E\)) play a significant role in shaping the
+phenotypic value. These effects can be unique to each individual
+(specific environment) or shared among individuals (common environment).
+In our model, we consider environmental variances for both DGE and IGE.
+
+\paragraph{Bibliographic Context}\label{bibliographic-context}
+
+Understanding the contributions of genetic and environmental factors to
+phenotypic variance has been a core pursuit in quantitative genetics.
+The inclusion of social interactions, as captured by IGE, has been
+pivotal in advancing breeding programs, particularly in plants and
+animals with significant social structures. Studies (ref) have laid the
+foundation for integrating IGEs into genetic models, highlighting their
+impact on selection response and breeding strategies.
+
+\paragraph{Simulation Algorithm}\label{simulation-algorithm}
+
+The simulation algorithm used in this practical session involves the
+following steps:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Matrix Preparation}: Genetic (G) and environmental (E)
+  variance-covariance matrices are prepared based on user inputs.
+\item
+  \textbf{Genotype and Neighborhood Generation}: Genotypes and
+  environmental effects are generated for a grid of plants, and
+  neighbors are assigned randomly.
+\item
+  \textbf{Phenotypic Value Calculation}: The phenotypic value for each
+  plant is calculated as the sum of its DGE, the IGEs from its
+  neighbors, and environmental effects.
+\item
+  \textbf{Selection}: A proportion of the top-performing plants is
+  selected based on their phenotypic values.
+\item
+  \textbf{Next Generation Prediction}: The mean genetic values for the
+  next generation are predicted based on the selected plants, taking
+  into account the variances and covariance between DGE and IGE.
+\end{enumerate}
+
+\paragraph{Detailed Steps in the
+Simulation}\label{detailed-steps-in-the-simulation}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Matrix Preparation}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Calculate the covariance between DGE and IGE based on the
+    user-provided genetic correlation.
+  \item
+    Form the genetic variance-covariance matrix \(G\) and the
+    environmental variance-covariance matrix \(E\).
+  \end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{covdgE\_IGE }\OtherTok{\textless{}{-}}\NormalTok{ input}\SpecialCharTok{$}\NormalTok{r }\SpecialCharTok{*}\NormalTok{ (input}\SpecialCharTok{$}\NormalTok{varG11 }\SpecialCharTok{*}\NormalTok{ input}\SpecialCharTok{$}\NormalTok{varG22)}\SpecialCharTok{\^{}}\FloatTok{0.5}
+\NormalTok{G }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\FunctionTok{c}\NormalTok{(input}\SpecialCharTok{$}\NormalTok{varG11, covdgE\_IGE, covdgE\_IGE, input}\SpecialCharTok{$}\NormalTok{varG22), }\AttributeTok{nrow =} \DecValTok{2}\NormalTok{, }\AttributeTok{byrow =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{E }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\FunctionTok{c}\NormalTok{(input}\SpecialCharTok{$}\NormalTok{varE11, }\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{, input}\SpecialCharTok{$}\NormalTok{varE22), }\AttributeTok{nrow =} \DecValTok{2}\NormalTok{, }\AttributeTok{byrow =} \ConstantTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+\item
+  \textbf{Genotype and Neighborhood Generation}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Generate genotype values using a multivariate normal distribution
+    for a grid of \(N \times N\) plants.
+  \item
+    Generate environmental effects similarly.
+  \item
+    Assign neighbors randomly on a grid using a neighborhood matrix.
+  \end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{genotype }\OtherTok{\textless{}{-}} \FunctionTok{mvrnorm}\NormalTok{(}\AttributeTok{n =}\NormalTok{ N}\SpecialCharTok{\^{}}\DecValTok{2}\NormalTok{, }\AttributeTok{mu =} \FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), }\AttributeTok{Sigma =}\NormalTok{ G)}
+\NormalTok{enviro }\OtherTok{\textless{}{-}} \FunctionTok{mvrnorm}\NormalTok{(}\AttributeTok{n =}\NormalTok{ N}\SpecialCharTok{\^{}}\DecValTok{2}\NormalTok{, }\AttributeTok{mu =} \FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), }\AttributeTok{Sigma =}\NormalTok{ E)}
+\NormalTok{voisinage }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\FunctionTok{sample}\NormalTok{(}\DecValTok{1}\SpecialCharTok{:}\NormalTok{N}\SpecialCharTok{\^{}}\DecValTok{2}\NormalTok{, }\DecValTok{4}\SpecialCharTok{*}\NormalTok{N}\SpecialCharTok{\^{}}\DecValTok{2}\NormalTok{, }\AttributeTok{replace =} \ConstantTok{TRUE}\NormalTok{), }\AttributeTok{nrow =} \DecValTok{2}\SpecialCharTok{*}\NormalTok{N, }\AttributeTok{ncol =} \DecValTok{2}\SpecialCharTok{*}\NormalTok{N)}
+\end{Highlighting}
+\end{Shaded}
+\item
+  \textbf{Phenotypic Value Calculation}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    For each plant, calculate its DGE and sum the IGEs from its
+    neighbors.
+  \item
+    Add environmental effects to obtain the total phenotypic value.
+  \end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Valeur\_G }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(x, y, genotype, voisinage) \{}
+\NormalTok{    geno }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+    \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in}\NormalTok{ (x}\DecValTok{{-}1}\NormalTok{)}\SpecialCharTok{:}\NormalTok{(x}\SpecialCharTok{+}\DecValTok{1}\NormalTok{)) \{}
+        \ControlFlowTok{for}\NormalTok{ (j }\ControlFlowTok{in}\NormalTok{ (y}\DecValTok{{-}1}\NormalTok{)}\SpecialCharTok{:}\NormalTok{(y}\SpecialCharTok{+}\DecValTok{1}\NormalTok{)) \{}
+            \ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\NormalTok{(i }\SpecialCharTok{==}\NormalTok{ x }\SpecialCharTok{\&\&}\NormalTok{ j }\SpecialCharTok{==}\NormalTok{ y)) \{}
+\NormalTok{                geno }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(geno, voisinage[i, j])}
+\NormalTok{            \}}
+\NormalTok{        \}}
+\NormalTok{    \}}
+\NormalTok{    DGE }\OtherTok{\textless{}{-}}\NormalTok{ genotype[voisinage[x, y], }\DecValTok{1}\NormalTok{] }\SpecialCharTok{+}\NormalTok{ enviro[voisinage[x, y], }\DecValTok{1}\NormalTok{]}
+\NormalTok{    IGE }\OtherTok{\textless{}{-}} \FunctionTok{sum}\NormalTok{(genotype[geno, }\DecValTok{2}\NormalTok{] }\SpecialCharTok{+}\NormalTok{ enviro[geno, }\DecValTok{2}\NormalTok{])}
+    \FunctionTok{return}\NormalTok{(DGE }\SpecialCharTok{+}\NormalTok{ IGE)}
+\NormalTok{\}}
+
+\NormalTok{Pheno }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\NormalTok{tri\_geno }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\NormalTok{cpt }\OtherTok{\textless{}{-}} \DecValTok{0}
+
+\ControlFlowTok{for}\NormalTok{ (x }\ControlFlowTok{in} \DecValTok{5}\SpecialCharTok{:}\NormalTok{(N}\SpecialCharTok{+}\DecValTok{5}\NormalTok{)) \{}
+    \ControlFlowTok{for}\NormalTok{ (y }\ControlFlowTok{in} \DecValTok{5}\SpecialCharTok{:}\NormalTok{(N}\SpecialCharTok{+}\DecValTok{5}\NormalTok{)) \{}
+\NormalTok{        cpt }\OtherTok{\textless{}{-}}\NormalTok{ cpt }\SpecialCharTok{+} \DecValTok{1}
+\NormalTok{        Pheno[cpt] }\OtherTok{\textless{}{-}} \FunctionTok{Valeur\_G}\NormalTok{(x, y, genotype, voisinage)}
+\NormalTok{        tri\_geno[cpt] }\OtherTok{\textless{}{-}}\NormalTok{ voisinage[x, y]}
+\NormalTok{    \}}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+\item
+  \textbf{Selection}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Rank individuals by their phenotypic values.
+  \item
+    Select the top proportion (\(p\)) of individuals.
+  \end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{N\_sel }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(cpt }\SpecialCharTok{*}\NormalTok{ input}\SpecialCharTok{$}\NormalTok{p)}
+\NormalTok{geno\_sel }\OtherTok{\textless{}{-}}\NormalTok{ genotype[tri\_geno[}\FunctionTok{order}\NormalTok{(Pheno, }\AttributeTok{decreasing =} \ConstantTok{TRUE}\NormalTok{)][}\DecValTok{1}\SpecialCharTok{:}\NormalTok{N\_sel], ]}
+\end{Highlighting}
+\end{Shaded}
+\item
+  \textbf{Next Generation Prediction}:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Calculate the mean genetic values for the next generation based on
+    the selected individuals.
+  \item
+    Adjust the mean values considering the response to selection,
+    including the correlation between DGE and IGE.
+  \end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{S }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\NormalTok{S[}\DecValTok{1}\NormalTok{] }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(genotype[tri\_geno[}\FunctionTok{order}\NormalTok{(Pheno, }\AttributeTok{decreasing =} \ConstantTok{TRUE}\NormalTok{)][}\DecValTok{1}\SpecialCharTok{:}\NormalTok{N\_sel], }\DecValTok{1}\NormalTok{])}
+\NormalTok{S[}\DecValTok{2}\NormalTok{] }\OtherTok{\textless{}{-}} \FunctionTok{mean}\NormalTok{(genotype[tri\_geno[}\FunctionTok{order}\NormalTok{(Pheno, }\AttributeTok{decreasing =} \ConstantTok{TRUE}\NormalTok{)][}\DecValTok{1}\SpecialCharTok{:}\NormalTok{N\_sel], }\DecValTok{2}\NormalTok{])}
+
+\NormalTok{R }\OtherTok{\textless{}{-}}\NormalTok{ G }\SpecialCharTok{\%*\%} \FunctionTok{solve}\NormalTok{(P) }\SpecialCharTok{\%*\%}\NormalTok{ S}
+\NormalTok{mus }\OtherTok{\textless{}{-}}\NormalTok{ mu}
+\NormalTok{mus[}\DecValTok{1}\NormalTok{] }\OtherTok{\textless{}{-}}\NormalTok{ mu[}\DecValTok{1}\NormalTok{] }\SpecialCharTok{+}\NormalTok{ R[}\DecValTok{1}\NormalTok{]}
+\NormalTok{mus[}\DecValTok{2}\NormalTok{] }\OtherTok{\textless{}{-}}\NormalTok{ mu[}\DecValTok{2}\NormalTok{] }\SpecialCharTok{+}\NormalTok{ R[}\DecValTok{2}\NormalTok{]}
+
+\NormalTok{new\_geno }\OtherTok{\textless{}{-}} \FunctionTok{mvrnorm}\NormalTok{(}\AttributeTok{n =}\NormalTok{ N}\SpecialCharTok{\^{}}\DecValTok{2}\NormalTok{, }\AttributeTok{mu =}\NormalTok{ mus, }\AttributeTok{Sigma =}\NormalTok{ G)}
+\NormalTok{new\_voisinage }\OtherTok{\textless{}{-}} \FunctionTok{matrix}\NormalTok{(}\FunctionTok{sample}\NormalTok{(}\DecValTok{1}\SpecialCharTok{:}\NormalTok{N}\SpecialCharTok{\^{}}\DecValTok{2}\NormalTok{, }\DecValTok{4}\SpecialCharTok{*}\NormalTok{N}\SpecialCharTok{\^{}}\DecValTok{2}\NormalTok{, }\AttributeTok{replace =} \ConstantTok{TRUE}\NormalTok{), }\AttributeTok{nrow =} \DecValTok{2}\SpecialCharTok{*}\NormalTok{N, }\AttributeTok{ncol =} \DecValTok{2}\SpecialCharTok{*}\NormalTok{N)}
+
+\NormalTok{new\_Pheno }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\NormalTok{new\_tri\_geno }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{()}
+\NormalTok{cpt }\OtherTok{\textless{}{-}} \DecValTok{0}
+
+\ControlFlowTok{for}\NormalTok{ (x }\ControlFlowTok{in} \DecValTok{5}\SpecialCharTok{:}\NormalTok{(N}\SpecialCharTok{+}\DecValTok{5}\NormalTok{)) \{}
+    \ControlFlowTok{for}\NormalTok{ (y }\ControlFlowTok{in} \DecValTok{5}\SpecialCharTok{:}\NormalTok{(N}\SpecialCharTok{+}\DecValTok{5}\NormalTok{)) \{}
+\NormalTok{        cpt }\OtherTok{\textless{}{-}}\NormalTok{ cpt }\SpecialCharTok{+} \DecValTok{1}
+\NormalTok{        new\_Pheno[cpt] }\OtherTok{\textless{}{-}} \FunctionTok{Valeur\_G}\NormalTok{(x, y, new\_geno, new\_voisinage)}
+\NormalTok{        new\_tri\_geno[cpt] }\OtherTok{\textless{}{-}}\NormalTok{ new\_voisinage[x, y]}
+\NormalTok{    \}}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+\end{enumerate}
+
+By understanding these steps and using the Shiny application, you will
+gain insights into the dynamics of genetic selection and the impact of
+social interactions on breeding outcomes.
+
+\paragraph{Shiny Application
+Instructions}\label{shiny-application-instructions}
+
+To use the Shiny application for this practical session, follow these
+steps:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Open the Shiny application in your web browser.
+\item
+  Set the number of individuals (N) using the slider.
+\item
+  Adjust the genetic variances for DGE and IGE, the genetic correlation,
+  and the environmental variances using the provided inputs.
+\item
+  Set the selection pressure to determine the proportion of
+  top-performing plants to be selected.
+\item
+  If desired, set a seed for reproducibility by checking the box and
+  entering a seed value.
+\item
+  Click the ``Run Simulation'' button to start the simulation.
+\item
+  View the results in the ``Graph'' and ``Summary'' tabs, which show the
+  genotype distribution, phenotypic distributions before and after
+  selection, and a summary of the calculations.
+\end{enumerate}
+
+\paragraph{Suggested Parameters}\label{suggested-parameters}
+
+To help you understand the effects of selection, try using the following
+parameter values:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Number of individuals (N)}: 20
+\item
+  \textbf{Genetic variance DGE (\(V_{DGE}\))}: 0.75
+\item
+  \textbf{Genetic variance IGE (\(V_{IGE}\))}: 0.07
+\item
+  \textbf{Genetic correlation DGE : IGE (\(r\))}: 0.5
+\item
+  **Environmental variance DGE
+\end{itemize}
+
+(\(V_{E_{DGE}}\))\textbf{: 0.7 - }Environmental variance IGE
+(\(V_{E_{IGE}}\))\textbf{: 0.07 - }Selection pressure (\(p\))**: 0.3
+
+Observe how changes in these parameters affect the selection outcomes
+and the predicted genetic values of the next generation.
+
+\end{document}

@@ -1,0 +1,43 @@
+---
+title: " 2024 ELLS summer school Darwinian agriculture"
+subtitle: "Workshop Social evolution under mass selection or under true breeding values"
+author: "Jacques David, Nicolas Salas, Peter Bourke"
+date: "2024-06-20"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Function to check and install packages
+install_if_missing <- function(pkg) {
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+    library(pkg, character.only = TRUE)
+  }
+}
+
+# Check and install necessary packages
+install_if_missing("knitr")
+install_if_missing("kableExtra")
+
+```
+# Practical Session on Phenotypic Value Decomposition and Selection Effects
+
+# Introduction
+Welcome to this practical session on the decomposition of phenotypic value and the effects of selection. In this session, we will explore how the phenotypic value of a plant is influenced by its genotype and by the genotypes of its neighbors, and how selection on these traits affects the next generation.
+
+# Key Concepts
+
+## Decomposition of the Phenotypic Value
+Classically, in one single macro-environment, the phenotypic value ($P$) of an individual can be decomposed into multiple components:
+$$ P = G + E $$, 
+Where:
+- **G** represents the genetic contribution to the phenotype.
+- **E** represents the micro-environmental contribution to the phenotype.
+

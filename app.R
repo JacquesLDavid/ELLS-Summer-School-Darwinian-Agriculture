@@ -8,6 +8,7 @@ if(!requireNamespace("sommer", quietly = TRUE)){ install.packages("sommer")}
 if(!requireNamespace("data.table", quietly = TRUE)){ install.packages("data.table")}
 if(!requireNamespace("shinycssloaders", quietly = TRUE)){ install.packages("shinycssloaders")}
 if(!requireNamespace("schoolmath", quietly = TRUE)){ install.packages("schoolmath")}
+if(!requireNamespace("corrplot", quietly = TRUE)){ install.packages("corrplot")}
 
 library(MASS) # For mvrnorm
 library(ggplot2) # For plots
@@ -40,7 +41,7 @@ ui <- fluidPage(
       checkboxInput("Asreml","Use of Asreml to make inference", value=FALSE),
 		  checkboxInput("is.spherical","'Spherical' neighbordhood or 'flat' neighborhood", value=TRUE),
 	  p("Make the product of N x Rep reasonably close to 1000 at the maximum"),
-      sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 450),
+      sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 100),
       sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 100, value = 2),
       sliderInput("N_sim", "Number of simulations  (N_sim)", min = 1, max = 100, value = 1),
 	  tags$hr(),
