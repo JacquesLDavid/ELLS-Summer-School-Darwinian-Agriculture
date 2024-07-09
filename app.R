@@ -38,6 +38,7 @@ ui <- fluidPage(
       numericInput("seedValue", "Seed value", value = 12345),
       checkboxInput("Mean","Mean effects (checked) or Sum effects (unchecked) for IGE calculation", value=FALSE),
       checkboxInput("Asreml","Use of Asreml to make inference", value=FALSE),
+		  checkboxInput("is.spherical","'Spherical' neighbordhood or 'flat' neighborhood", value=TRUE),
 	  p("Make the product of N x Rep reasonably close to 1000 at the maximum"),
       sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 450),
       sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 100, value = 2),
@@ -81,13 +82,12 @@ ui <- fluidPage(
                   ),
                   
                   tabPanel("Selection", 
-                           
+                           tags$hr(),
                            p("Individual Mass selection of phenotypic values"),
                            plotOutput("plotMass_differential"),
+                           tags$hr(),
                            p("Genetic advance on phenotypic values under mass selection"),
                            plotOutput("plotMass_Selection"),
-                           
-                           tags$hr(),
                            tags$hr(),
                            p("Genetic advance on phenotypic values under DGEvsIGE index selection "),
                            plotOutput("plotIndex_Selection"),
@@ -128,6 +128,147 @@ ui <- fluidPage(
 
 # Server
 server <- function(input, output) {
+  
+  voisin_fct=function(DATA,mat_grid){
+    for (i in 1:nrow(mat_grid)){
+      if(i==1){
+        for (j in 1:ncol(mat_grid)){
+          if(j==1){
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),ncol(mat_grid)]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),ncol(mat_grid)]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,ncol(mat_grid)]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,ncol(mat_grid)]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,ncol(mat_grid)]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,ncol(mat_grid)]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j+1]]+1
+          }
+          else if(j==ncol(mat_grid)){
+            
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,1]]+1
+          }
+          else{
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[nrow(mat_grid),j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j+1]]+1
+          }
+        }
+      }
+      else if (i==nrow(mat_grid)){
+        for (j in 1:(ncol(mat_grid))){
+          if(j==1){
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,ncol(mat_grid)]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,ncol(mat_grid)]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,ncol(mat_grid)]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,ncol(mat_grid)]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,ncol(mat_grid)]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,ncol(mat_grid)]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j+1]]+1
+          }
+          else if(j==ncol(mat_grid)){
+            
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,1]]+1
+          }
+          else{
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[1,j+1]]+1
+          }
+        }
+      }
+      
+      else{
+        for (j in 1:(ncol(mat_grid))){
+          if(j==1){
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,ncol(mat_grid)]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,ncol(mat_grid)]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,ncol(mat_grid)]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,ncol(mat_grid)]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,ncol(mat_grid)]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,ncol(mat_grid)]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j+1]]+1
+            
+          }
+          else if(j==ncol(mat_grid)){
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,1]]+1
+          }
+          else{
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j-1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j-1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i-1,j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i,j+1]]+1
+            DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j+1]]=DATA[which(DATA$Row==i&DATA$Column==j),mat_grid[i+1,j+1]]+1
+          }
+        }
+      }
+    }
+    return(DATA)
+  }
+  voisin_fct_sans_recollage <- function(DATA, mat_grid) {
+    nrows <- nrow(mat_grid)
+    ncols <- ncol(mat_grid)
+    
+    for (i in 1:nrows) {
+      for (j in 1:ncols) {
+        voisins <- list(
+          c(i-1, j-1), c(i-1, j), c(i-1, j+1),
+          c(i, j-1),             c(i, j+1),
+          c(i+1, j-1), c(i+1, j), c(i+1, j+1)
+        )
+        
+        for (v in voisins) {
+          vi <- v[1]
+          vj <- v[2]
+          
+          if (vi >= 1 && vi <= nrows && vj >= 1 && vj <= ncols) {
+            focal <- DATA[which(DATA$Row == i & DATA$Column == j), "Focal"]
+            DATA[which(DATA$Row == i & DATA$Column == j), mat_grid[vi, vj]] <- 
+              DATA[which(DATA$Row == i & DATA$Column == j), mat_grid[vi, vj]] + 1
+          }
+        }
+      }
+    }
+    return(DATA)
+  }
+  assign("voisin_fct",voisin_fct,globalenv())
+  assign("voisin_fct_sans_recollage",voisin_fct_sans_recollage,globalenv())
+  
   observeEvent(input$goButton, {
     output$plotTRUE_DGE_IGE<-renderPlot(ggplot())
     output$plotTRUEvsPRED_DGE<-renderPlot(ggplot())
@@ -136,38 +277,11 @@ server <- function(input, output) {
     output$plotMass_differential<-renderPlot(ggplot())
     output$plotMass_Selection<-renderPlot(ggplot())
     output$plotIndex_Selection<-renderPlot(ggplot())
-    
+    is.spherical=input$is.spherical
     if(input$setSeed) {
       set.seed(input$seedValue)
     }
     
-    count_neighbors <- function(mat) {
-      n_row <- nrow(mat)
-      n_col <- ncol(mat)
-      offsets <- expand.grid(di = c(-1, 0, 1), dj = c(-1, 0, 1))
-      offsets <- offsets[!(offsets$di == 0 & offsets$dj == 0), ]
-      
-      unique_genotypes <- unique(mat)
-      neighbor_counts <- array(0, dim = c(n_row, n_col, length(unique_genotypes)))
-      dimnames(neighbor_counts)[[3]] <- unique_genotypes
-      
-      for (k in 1:nrow(offsets)) {
-        ni <- (row(mat) + offsets$di[k] - 1) %% n_row + 1
-        nj <- (col(mat) + offsets$dj[k] - 1) %% n_col + 1
-        for (i in 1:n_row) {
-          for (j in 1:n_col) {
-            current_genotype <- mat[ni[i, j], nj[i, j]]
-            if (!is.na(match(current_genotype, unique_genotypes))) {
-              neighbor_counts[i, j, match(current_genotype, unique_genotypes)] <- neighbor_counts[i, j, match(current_genotype, unique_genotypes)] + 1
-            }
-          }
-        }
-      }
-      
-      neighbor_counts
-    }
-    
-    assign("count_neighbors",count_neighbors,globalenv())
     Asreml=input$Asreml
     Mean=input$Mean
     # Asreml=FALSE
@@ -181,14 +295,14 @@ server <- function(input, output) {
       Asreml=FALSE
     }
     
-    # V_env_DGE=0.1
+    # V_env_DGE=0
     # V_env_IGE=0
-    # V_geno=0.75
-    # V_voisin=V_geno
-    # cor_geno_voisin=-0.6
+    # V_geno=1
+    # V_voisin=1/8*V_geno
+    # cor_geno_voisin=0
     # cov_geno_voisin=cor_geno_voisin*sqrt(V_geno*V_voisin)
-    # N_geno=25
-    # N_rep=75
+    # N_geno=100
+    # N_rep=2
     # b_DGE=0.5
     # p=0.1
     
@@ -206,8 +320,7 @@ server <- function(input, output) {
     c=0
     if (ceiling(sqrt(N_geno*N_rep))!=sqrt(N_geno*N_rep)){
       N_row=N_col=ceiling(sqrt(N_geno*N_rep))
-    }
-    else {
+    }else {
       N_row=N_col=sqrt(N_geno*N_rep)
     }
     
@@ -217,6 +330,7 @@ server <- function(input, output) {
     assign("N_col",N_col,envir = globalenv())
     assign("Mean",Mean,envir = globalenv())
     assign("Asreml",Asreml,envir=globalenv())
+    assign("is.spherical",is.spherical,envir=globalenv())
     
     SIM <- c()
     calc_SIM <- c()
@@ -261,37 +375,37 @@ server <- function(input, output) {
       IGE <- df[, 2]
       assign("IGE",IGE,globalenv())
       
-      DATA <- expand.grid(Focal = Focal, rep = rep)
-      grid_indices <- sample(N_row * N_col, N_geno * N_rep, replace = FALSE)
-      grid_sample <- grid[grid_indices, ]
-      DATA <- cbind(grid_sample, DATA)
+      DATA=expand_grid("Focal"=as.character(paste0("G",sprintf("%03d", 1:N_geno))),"rep"=as.character(sprintf("%03d", 1:N_rep)))
       
-      mat_grid <- matrix("vide", nrow = N_row, ncol = N_col)
-      mat_grid[cbind(grid_sample$Row, grid_sample$Column)] <- as.character(DATA$Focal)
+      grid=expand_grid("Row"=factor(1:N_row),"Column"=factor(1:N_col))
+      grid=grid[sample(1:(N_row*N_col),(N_geno*N_rep)),]
       
-      empty_positions <- which(mat_grid == "vide", arr.ind = TRUE)
-      mat_grid[empty_positions] <- sample(DATA$Focal, nrow(empty_positions), replace = TRUE)
+      mat_grid=matrix("vide",nrow=N_row,ncol=N_col)
+      DATA=cbind(DATA,grid)
       
-      neighbor_counts <- count_neighbors(mat_grid)
-      
-      DATA <- cbind(matrix(0, nrow = nrow(DATA), ncol = length(Focal)), DATA)
-      colnames(DATA)[1:N_geno] <- Focal
-      
-      for (k in 1:nrow(DATA)) {
-        i <- DATA$Row[k]
-        j <- DATA$Column[k]
-        for (geno in Focal) {
-          if (geno %in% dimnames(neighbor_counts)[[3]]) {
-            DATA[k, geno] <- neighbor_counts[i, j, geno]
+      for (i in 1:(nrow(mat_grid))){
+        for (j in 1:(ncol(mat_grid))){
+          if (!is_empty(DATA[(which(DATA$Row==i&DATA$Column==j)),"Focal"])){
+            mat_grid[i,j]=DATA[(which(DATA$Row==i&DATA$Column==j)),"Focal"]
           }
         }
+      }
+      mat_grid[grep(mat_grid,pattern="vide")]=sample(DATA$Focal,length(mat_grid[grep(mat_grid,pattern="vide")]))
+      
+      matrice_voisin=matrix(0,nrow = N_geno*N_rep,ncol=N_geno,dimnames = list(1:(N_geno*N_rep),unique(DATA$Focal)))
+      DATA=cbind(matrice_voisin,DATA,data.frame("vide"=NA))
+      
+      if (is.spherical){
+        DATA=voisin_fct(DATA,mat_grid)
+      }else{
+        DATA=voisin_fct_sans_recollage(DATA,mat_grid)
       }
       
       Zg <- model.matrix(~Focal - 1, DATA)
       dimnames(Zg)[[2]] <- paste0("G", sprintf("%03d", 1:N_geno))
       
       if (Mean) {
-        Zv <- as.matrix(DATA[, 1:N_geno]) / 8
+        Zv <- as.matrix(DATA[, 1:N_geno]) / rowSums(DATA[1:N_geno])
         DATA[, 1:N_geno] <- Zv
       } else {
         Zv <- as.matrix(DATA[, 1:N_geno])
@@ -311,9 +425,9 @@ server <- function(input, output) {
     }
     
     TABLE_TRUE <- data.frame(
-      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno", "calc_SIM"),
-      "Variance" = c(mean(SIM_DGE), mean(SIM_IGE), mean(SIM_cov),mean(SIM), mean(calc_SIM)),
-      "Mean"=c(mean(SIM_mean_DGE),mean(SIM_mean_IGE),NA,mean(SIM_mean),NA)
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno"),
+      "Variance" = c(mean(SIM_DGE), mean(SIM_IGE), mean(SIM_cov),mean(SIM)),
+      "Mean"=c(mean(SIM_mean_DGE),mean(SIM_mean_IGE),NA,mean(SIM_mean))
     )
     
     output$table_TrueOutput <- renderTable({
@@ -410,31 +524,27 @@ server <- function(input, output) {
     DGE_sel_I <- df_sel_I[, 1]
     IGE_sel_I <- df_sel_I[, 2]
     
-    DATA_sel_I <- expand.grid(Focal = Focal_sel_I, rep = rep_sel_I)
-    grid_indices <- sample(N_row * N_col, N_geno * N_rep, replace = FALSE)
-    grid_sample <- grid[grid_indices, ]
-    DATA_sel_I <- cbind(grid_sample, DATA_sel_I)
+    DATA_sel_I=expand_grid("Focal"=as.character(paste0("G",sprintf("%03d", 1:N_geno))),"rep"=as.character(sprintf("%03d", 1:N_rep)))
     
-    mat_grid <- matrix("vide", nrow = N_row, ncol = N_col)
-    mat_grid[cbind(grid_sample$Row, grid_sample$Column)] <- as.character(DATA_sel_I$Focal)
+    grid=expand_grid("Row"=factor(1:N_row),"Column"=factor(1:N_col))
+    grid=grid[sample(1:(N_row*N_col),(N_geno*N_rep)),]
     
-    empty_positions <- which(mat_grid == "vide", arr.ind = TRUE)
-    mat_grid[empty_positions] <- sample(DATA_sel_I$Focal, nrow(empty_positions), replace = TRUE)
+    mat_grid=matrix("vide",nrow=N_row,ncol=N_col)
+    DATA_sel_I=cbind(DATA_sel_I,grid)
     
-    neighbor_counts <- count_neighbors(mat_grid)
-    
-    DATA_sel_I <- cbind(matrix(0, nrow = nrow(DATA_sel_I), ncol = length(Focal_sel_I)), DATA_sel_I)
-    colnames(DATA_sel_I)[1:N_geno] <- Focal_sel_I
-    
-    for (k in 1:nrow(DATA_sel_I)) {
-      i <- DATA_sel_I$Row[k]
-      j <- DATA_sel_I$Column[k]
-      for (geno in Focal_sel_I) {
-        if (geno %in% dimnames(neighbor_counts)[[3]]) {
-          DATA_sel_I[k, geno] <- neighbor_counts[i, j, geno]
+    for (i in 1:(nrow(mat_grid))){
+      for (j in 1:(ncol(mat_grid))){
+        if (!is_empty(DATA_sel_I[(which(DATA_sel_I$Row==i&DATA_sel_I$Column==j)),"Focal"])){
+          mat_grid[i,j]=DATA_sel_I[(which(DATA_sel_I$Row==i&DATA_sel_I$Column==j)),"Focal"]
         }
       }
     }
+    mat_grid[grep(mat_grid,pattern="vide")]=sample(DATA_sel_I$Focal,length(mat_grid[grep(mat_grid,pattern="vide")]))
+    
+    matrice_voisin=matrix(0,nrow = N_geno*N_rep,ncol=N_geno,dimnames = list(1:(N_geno*N_rep),unique(DATA_sel_I$Focal)))
+    DATA_sel_I=cbind(matrice_voisin,DATA_sel_I,data.frame("vide"=NA))
+    
+    DATA_sel_I=voisin_fct(DATA_sel_I,mat_grid)
     
     Zg_sel_I <- model.matrix(~Focal - 1, DATA_sel_I)
     dimnames(Zg_sel_I)[[2]] <- paste0("G", sprintf("%03d", 1:N_geno))
@@ -464,14 +574,15 @@ server <- function(input, output) {
         labs(x = "Phenotypic Value", y = "Density", title = "Index selection") +
         theme_minimal() +
         theme(legend.title = element_blank())+
+        xlim(-5*var(Pheno),+5*var(Pheno))+
         annotate("text",x=mean_after_sel_I+1.5,y=0.3,label=paste0('Delta_mu_pheno = ', mean_after_sel_I - mean_before_sel_I))# Remove the legend title
     })
     
     
     TABLE_TRUE_sel_I <- data.frame(
-      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno", "calc_SIM"),
-      "Variance" = c(var(DGE_sel_I), var(IGE_sel_I), cov(DGE_sel_I,IGE_sel_I),var(Pheno_sel_I), round(var(DGE_sel_I) + 8 * var(IGE_sel_I) + 8 * mean(tcrossprod(IGE_sel_I + DGE_sel_I)) * (2 * cov(DGE_sel_I, IGE_sel_I) + 7 * var(IGE_sel_I)) / (N_col * N_row), 3)),
-      "Mean"=c(mean(DGE_sel_I),mean(IGE_sel_I),NA,mean(Pheno_sel_I),NA)
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno"),
+      "Variance" = c(var(DGE_sel_I), var(IGE_sel_I), cov(DGE_sel_I,IGE_sel_I),var(Pheno_sel_I)),
+      "Mean"=c(mean(DGE_sel_I),mean(IGE_sel_I),NA,mean(Pheno_sel_I))
     )
     
     output$table_True_sel_IOutput <- renderTable({
@@ -526,31 +637,27 @@ server <- function(input, output) {
     DGE_sel <- df_sel[, 1]
     IGE_sel <- df_sel[, 2]
     
-    DATA_sel <- expand.grid(Focal = Focal_sel, rep = rep_sel)
-    grid_indices <- sample(N_row * N_col, N_geno * N_rep, replace = FALSE)
-    grid_sample <- grid[grid_indices, ]
-    DATA_sel <- cbind(grid_sample, DATA_sel)
+    DATA_sel=expand_grid("Focal"=as.character(paste0("G",sprintf("%03d", 1:N_geno))),"rep"=as.character(sprintf("%03d", 1:N_rep)))
     
-    mat_grid <- matrix("vide", nrow = N_row, ncol = N_col)
-    mat_grid[cbind(grid_sample$Row, grid_sample$Column)] <- as.character(DATA_sel$Focal)
+    grid=expand_grid("Row"=factor(1:N_row),"Column"=factor(1:N_col))
+    grid=grid[sample(1:(N_row*N_col),(N_geno*N_rep)),]
     
-    empty_positions <- which(mat_grid == "vide", arr.ind = TRUE)
-    mat_grid[empty_positions] <- sample(DATA_sel$Focal, nrow(empty_positions), replace = TRUE)
+    mat_grid=matrix("vide",nrow=N_row,ncol=N_col)
+    DATA_sel=cbind(DATA_sel,grid)
     
-    neighbor_counts <- count_neighbors(mat_grid)
-    
-    DATA_sel <- cbind(matrix(0, nrow = nrow(DATA_sel), ncol = length(Focal_sel)), DATA_sel)
-    colnames(DATA_sel)[1:N_geno] <- Focal_sel
-    
-    for (k in 1:nrow(DATA_sel)) {
-      i <- DATA_sel$Row[k]
-      j <- DATA_sel$Column[k]
-      for (geno in Focal_sel) {
-        if (geno %in% dimnames(neighbor_counts)[[3]]) {
-          DATA_sel[k, geno] <- neighbor_counts[i, j, geno]
+    for (i in 1:(nrow(mat_grid))){
+      for (j in 1:(ncol(mat_grid))){
+        if (!is_empty(DATA_sel[(which(DATA_sel$Row==i&DATA_sel$Column==j)),"Focal"])){
+          mat_grid[i,j]=DATA_sel[(which(DATA_sel$Row==i&DATA_sel$Column==j)),"Focal"]
         }
       }
     }
+    mat_grid[grep(mat_grid,pattern="vide")]=sample(DATA_sel$Focal,length(mat_grid[grep(mat_grid,pattern="vide")]))
+    
+    matrice_voisin=matrix(0,nrow = N_geno*N_rep,ncol=N_geno,dimnames = list(1:(N_geno*N_rep),unique(DATA_sel$Focal)))
+    DATA_sel=cbind(matrice_voisin,DATA_sel,data.frame("vide"=NA))
+    
+    DATA_sel=voisin_fct(DATA_sel,mat_grid)
     
     Zg_sel <- model.matrix(~Focal - 1, DATA_sel)
     dimnames(Zg_sel)[[2]] <- paste0("G", sprintf("%03d", 1:N_geno))
@@ -580,15 +687,16 @@ server <- function(input, output) {
         scale_fill_manual(values = c("Before selection" = "blue", "After selection" = "red")) +
         labs(x = "Phenotypic Value", y = "Density", title = "Phenotypic mass selection") +
         theme_minimal() +
+        xlim(-5*var(Pheno),+5*var(Pheno))+
         theme(legend.title = element_blank())+# Remove the legend title
         annotate("text",x=mean_after_sel+1.5,y=0.3,label=paste0('Delta_mu_pheno = ', mean_after_sel - mean_before_sel))# Remove the legend title
       
     })
     
     TABLE_TRUE_sel <- data.frame(
-      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno", "calc_SIM"),
-      "Variance" = c(var(DGE_sel), var(IGE_sel), cov(DGE_sel,IGE_sel),var(Pheno_sel), round(var(DGE_sel) + 8 * var(IGE_sel) + 8 * mean(tcrossprod(IGE_sel + DGE_sel)) * (2 * cov(DGE_sel, IGE_sel) + 7 * var(IGE_sel)) / (N_col * N_row), 3)),
-      "Mean"=c(mean(DGE_sel),mean(IGE_sel),NA,mean(Pheno_sel),NA)
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno"),
+      "Variance" = c(var(DGE_sel), var(IGE_sel), cov(DGE_sel,IGE_sel),var(Pheno_sel)),
+      "Mean"=c(mean(DGE_sel),mean(IGE_sel),NA,mean(Pheno_sel))
     )
     
     output$table_True_selOutput <- renderTable({
