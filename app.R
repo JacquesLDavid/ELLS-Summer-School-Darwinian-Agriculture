@@ -52,7 +52,7 @@ ui <- fluidPage(
       numericInput("varE11", "Environmental variance DGE", value = 1),
       numericInput("varE22", "Environmental variance IGE", value = 0.125),
       div(style = "text-align: center;font-weight: bold; color: blue;",
-          actionButton("goButton", label = div(style = "color: red; font-weight: bold;", "Step 1. Run Simulation")))
+          actionButton("goButton", label = div(style = "color: red; font-weight: bold;", "Step 1. Run Simulation"))
       ),
       tags$hr(),
       p("SELECTION"),
@@ -71,13 +71,13 @@ ui <- fluidPage(
                            plotOutput("plotTRUE_DGE_IGE"),
                            tags$hr(),
                            p("Quality of estimates of DGE"),
-                           plotOutput("plotTRUEvsPRED_DGE"),
+                           plotOutput("plotTRUE_DGE_PRED_DGE"),
                            tags$hr(),
                            p("Quality of estimates of iGE"),
-                           plotOutput("plotTRUEvsPRED_IGE"),
+                           plotOutput("plotTRUE_IGE_PRED_IGE"),
                            tags$hr(),
                            p("Relation between estimates of DGE and IGE"),
-                           plotOutput("plotPred_DGE_IGE"),
+                           plotOutput("plotPRED_DGE_IGE"),
                   ),
                   
                   tabPanel("Selection", 
@@ -376,7 +376,7 @@ server <- function(input, output) {
     assign("Zv", Zv, envir = globalenv())
     
     output$corrplot=renderPlot({
-      corrplot::corrplot(cor(data.frame("TRUE_DGE"=DGE,"TRUE_IGE"=IGE,"PRED_DGE"=pred$DGE_pred,"PRED_IGE"=pred$IGE_pred)),type = "lower")
+      corrplot::corrplot(cor(data.frame("TRUE_DGE"=DGE,"TRUE_IGE"=IGE,"PRED_DGE"=pred$DGE_pred,"PRED_IGE"=pred$IGE_pred)),type = "lower",addCoef.col = "black")
     })
   })
   
