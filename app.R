@@ -41,7 +41,7 @@ ui <- fluidPage(
       checkboxInput("Asreml","Use of Asreml to make inference", value=FALSE),
 		  checkboxInput("is.spherical","'Spherical' neighbordhood or 'flat' neighborhood", value=TRUE),
 	  p("Make the product of N x Rep reasonably close to 1000 at the maximum"),
-      sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 100),
+      sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 50),
       sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 100, value = 2),
       sliderInput("N_sim", "Number of simulations  (N_sim)", min = 1, max = 100, value = 1),
 	  tags$hr(),
@@ -58,11 +58,11 @@ ui <- fluidPage(
       ),
       tags$hr(),
       p("SELECTION"),
-      sliderInput("p", "Selection pressure", min = 0.01, max = 1, value = 0.1, step = 0.1),          
-      sliderInput("b_DGE", "Weigth on DGE (IGE =1-DGE)", min = -1, max = 1, value = 0.5, step = 0.1),
+      sliderInput("p", "Selection pressure", min = 0.01, max = 1, value = 0.5, step = 0.1),          
+      sliderInput("b_DGE", "Selectin index : Weigth on DGE (IGE =1-DGE)", min = -1, max = 1, value = 0.5, step = 0.1),
       div(style = "text-align: center;",
           actionButton("SelButton",
-                       label = div(style = "color: red; font-weight: bold;", "Step 2. Make Simulation"))
+                       label = div(style = "color: blue; font-weight: bold;", "Step 2. Breed !"))
       )
     ),
     mainPanel(

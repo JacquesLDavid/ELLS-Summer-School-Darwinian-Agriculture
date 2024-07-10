@@ -1,0 +1,186 @@
+---
+title: " 2024 ELLS summer school Darwinian agriculture"
+subtitle: "Workshop Social evolution under mass selection or under true breeding values"
+author: "Jacques David, Nicolas Salas, Peter Bourke"
+date: "2024-06-20"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if(!requireNamespace("MASS", quietly = TRUE)){ install.packages("MASS")}
+library(MASS)
+```
+
+# 1. Introduction
+Welcome to this practical session on the decomposition of phenotypic value and the effects of the efficiency of selection. In this session, we will explore how the phenotypic value of a plant can be influenced by its genotype and also by the genotypes of its neighbors, and how selection on these traits affects the performance of the next generation.  
+
+Understanding the contributions of genetic and environmental factors to phenotypic variance has been a core pursuit in quantitative genetics. The inclusion of social interactions has been pivotal in advancing breeding programs, particularly in plants and animals with significant social structures. 
+
+We will consider a theoretical situation that could mimick the situation of a farmer's selection within heterogeneous populations. 
+
+The selection can be made either by selecting the best performing phenotypes or by getting measurements of individual plant phenotypes within their neighborhood knowing their genotypes, i.e., several genotypes are present within the plot and every plant is identified for its genotype. We consider a simple situation where genotypes are completely repeatable, e.g. pure lines, or clones or F1 hybrids).  You will explore the consequences of social interactions when they are determined genetically.
+
+
+# 2. Key theoretical Concepts
+
+## Decomposition of the Phenotypic Value
+Classically, in one single macro-environment, the phenotypic value ($P$) of an individual can be decomposed into two components:
+$$ P = G + E $$  
+Where:  
+- $G$ represents the genetic contribution to the phenotype,  
+- $E$ represents the micro-environmental contribution to the phenotype.  
+
+Let's rigorously derive the total phenotypic variance $V_P$ where the phenotypes may not be independent, either because of genetic relatedness or structured environment such as neigborhoods.
+
+##  Independent data 
+Consider the phenotypes $P_i$ and $P_i'$ of two a individuals $i$ and $i'$.
+In the general case, $V(P)= E(Var(Pi)) + 2 cov(P_i,P_{i'})$ and if genotypes are independent and if there is a random distribution of individuals in a homogeneous environementn then $cov(P_i,P_{i'})=0$ and $V(P) = V(G) + V(E)$. 
+
+## Phenotypic variance in a complex neighbourhood : Genetic effects of interacting plants
+
+The general formula $V(P)= E(Var(Pi)) + 2 cov(P_i,P_{i'})$ has to be reconsidered since in our workshop situation, we consider that plants are grown on a grid and any of them have 8 neighbours with which it is interacting. 
+
+```{r, echo=FALSE}
+# Create the table with a focal cell and its neighbors
+table <- matrix(c("Neighbour1", "Neighbour2", "Neighbour3",
+                  "Neighbour4", "Focal", "Neighbour5",
+                  "Neighbour6", "Neighbour7", "Neighbour8"),
+                nrow = 3, byrow = TRUE)
+knitr::kable(table)
+
+```
+
+### Direct and indirect effects 
+In the case of heterogeneous populations, such as Bulks or landraces or farmers varieties, individuals of different genotypes are neighbouring each others. So, if we introduce the fact that the phenotype of a $focal$ individual, $i$, $P_{Focal_i}$, can be determined by its own genotype and by the genotype of its neighbour, $j$, $P_{Focal_i, Neighbour_j}$ can now be decomposed into a Direct Genetic Effect ($DGE$) due to $i$ and the Indirect Genetic Effect ($IGE$) from its neighbour  $j$, the model becomes:  
+
+$$P_{Focal_i, Neighbour_j} = DGE_{Focal_i} + IGE_{Neighbour_j} + E_{DGE_{Focal_i}} + E_{IGE_{Neighbour_j}}$$
+Where:  
+- $DGE_{Focal_i}$ is a Direct Genetic Effect of $i$, i.e., the direct contribution of the individual's own genotype to its own phenotype,  
+- $IGE_{Neignhbours}$ is the Indirect genetic contribution of the genotype of the neighbourc $j$  
+and,  
+- $E_{DGE_{Focal_i}}$ : environment effect on Direct Genetic Effect) on the focal plant  
+- $E_{IGE_{Neignhbour_j}}$ :environment effect on Indirect Genetic Effect of the neighbour  
+
+These components have their associated variances : $V_{DGE},V_{IGE}, V_{E_{DGE}}, V_{E_{IGE}}$  
+
+Of course, any individual in an heterogeneous populations, if a individual $i$ has a $DGE_i$ it also have a $IGE_i$ than can be correlated.  
+
+### Correlation between DGE and IGE
+A correlation between $DGE_i$ and $IGE_i$ will affects the overall distribution of the phenotypic values and hence the response to selection. For a social trait, a strong competitor, $i$, can have a strong positive $DGE_i$ value while reducing the trait value of its neighbours with a negative $IGE_i$ value.  
+
+According to the trait, the correlation between the $DGE_i$ and their $IGE_i$ counterpart can theoretically vary from -1 to 1. This correlation will thus translate in the data into a covariance between the $DGE_i$ and $IGE_i$ values, denoted $cov(DGE:IGE)$ with  
+
+$$r_{(DGE:IGE)}=\frac{cov(DGE:IGE)}{\sqrt{V_{DGE}V_{IGE}}}$$
+
+
+
+This leads to a modification of the $P_i$ value within its neighborhood. 
+
+$$ \begin{split}
+P_{i, (n1..n8)} = & DGE_{i} \,+ 
+                        \\ & IGE_{n1} \, +..+ \,IGE_{n8} \,+ 
+                        \\& E_{DGE_{i}} \,+ 
+                        \\& E_{IGE_{n1}}+..+E_{IGE_{n8}}
+\end{split}$$
+
+So the $V(P)$ becomes  :  
+$$V(P) = V(DGE) + 8 V(IGE) + V(E_DGE) + 8V(E_IGE) + 2cov(P_i,P_j)$$
+$2cov(P_i,P_j)$ is 0 when i and j are in different neighborhoods  
+BUT non null when they are in the same neighbourhood because :  
+- they have common neighbours, e.g., the $k$ neighbour and they share $IGE_k$ in common and,
+- that the phenotypic value of $j$ contains $IGE_i$ that is correlated to $DGE_i$
+
+You are going to explore this situation with the simulations.
+If you detect important deviation to the classical case, then it may be of importance to get estimate for each genotype of its $DGE_i$ and $IGE_i$ values. 
+
+Comment the different situations : What could be the result of a direct mass selection on plant individual phenotypes ? 
+
+Situation A : 
+```{r, echo=FALSE}
+G<-matrix(c(1,0, 0, 1), ncol=2)
+data <-mvrnorm(200, c(0,0), G)
+plot(data[,1], data[,2], xlab = "DGE", ylab="IGE", cex=0.5)
+```
+  
+  
+Situation B : 
+```{r, echo=FALSE}
+G<-matrix(c(1,-.5, -0.5, 1), ncol=2)
+data <-mvrnorm(200, c(0,0), G)
+plot(data[,1], data[,2], xlab = "DGE", ylab="IGE", cex=0.5)
+```
+
+
+Situation C : 
+```{r, echo=FALSE}
+G<-matrix(c(1,.5, 0.5, 1), ncol=2)
+data <-mvrnorm(200, c(0,0), G)
+plot(data[,1], data[,2], xlab = "DGE", ylab="IGE", cex=0.5)
+```
+
+
+## True Breeding Value (TBV)
+The true breeding value of a genotype, TBV integrates both its DGE and IGE.
+$TBV_i = DGE_i + IGE_i$
+
+It is an important metric for predicting the genetic value of the next generation, particularly when social interactions are considered. 
+
+So in the simulation, we will use the $SOMMER$ package to get prediction of DGE and IGE of each genotype present and repeated in the simulated population. 
+
+You will thus be able to compare mass selection with a selection in which you have BLUPs of DGE and IGE of each genotype. You could choose which term to maximise.
+
+# 2.Simulated populations and selection
+
+## Algorithm
+The simulation algorithm used in this practical session involves the following steps:
+
+1. **Matrix Preparation**: Genetic (G) and environmental (E) variance-covariance matrices are prepared based on user inputs.
+2. **Genotype and Neighborhood Generation**: Genotypes and environmental effects are generated for a grid of plants, and neighbors are assigned randomly.
+3. **Phenotypic Value Calculation**: The phenotypic value for each plant is calculated as the sum of its DGE, the IGEs from its neighbors, and environmental effects.
+4. **BLUPS** Prediction of DGE and IGE are obtained from phenotypic values and the neighbourhood position using the SOMMER package
+4. **Selection**: A proportion of the top-performing plants is selected based on their phenotypic values or their index value based on their BLUPS 
+5. **Next Generation Prediction**: The mean genetic values for the next generation are predicted based on the selected plants, taking into account the variances and covariance between DGE and IGE.
+
+By understanding these steps and using the Shiny application, you will gain insights into the dynamics of genetic selection and the impact of social interactions on breeding outcomes.
+
+## Shiny Application Instructions
+### Build the population
+To use the Shiny application for this practical session, follow these steps:
+
+1. Open the Shiny application in your web browser.
+2. Set the number of genotype (N) using the slider
+3. Set the number of repeats of each genotype (rep) using the slider and consider that the product N.rep not going above 1000 individuals. 
+4. Adjust the genetic variances for DGE and IGE, their genetic correlation, and the environmental variances using the provided inputs.
+
+Then **click the red button ** 1.Run simulation
+If you want to reproduce exactly the same results another time, tick "Set seed for reproducibility". If this box is not ticked, results will differ for each run.
+
+
+In the first result panel, graphs will appear permitting to discover the realised properties the population according to the parameters values you have chosen.
+
+### Breed !
+5. Set the selection pressure to determine the proportion of top-performing plants to be selected.
+6. Choose the value of the selection index, the relative weigth of DGE to the IGE
+7. View the results in the "Selection" and "Summary" tabs, which show the genotype distribution, phenotypic distributions before and after selection, and a summary of the calculations.
+
+You have two main graphs, one using Mass selection on direct phenotypic values and the other when using the knowledge on the DGE and IGE BLUPS estimated from the data.
+
+The summary tab provide a number of stats allowing you to compare the efficiency on your selection processes. 
+
+# Explore different situations 
+
+Once you have understood the functionning of the Shiny app, group by 3 and discuss 
+
+## Classical modeling
+What would be the values of the different parameters that are representative of a classical situation : no social interaction 
+
+## Understanding the impact of social genetics
+Observe how changes in these parameters affect the selection outcomes and the predicted genetic values of the next generation.
+Set a grid of values of the parameters to explore neatly your scenario. 
+
+## Prepare a report of your main findings
