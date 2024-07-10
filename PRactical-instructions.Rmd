@@ -128,8 +128,10 @@ We won't go into all the theoretical developments here. For more details, see Bo
 
 ## 2.5 True Breeding Value (TBV)
 ### Definition
-The true breeding value of a genotype, TBV integrates both its DGE and IGE.
+The true breeding value of a genotype, TBV integrates both its DGE and IGE. In mixture of two genotypes the IGE are applying on only one neighbor on avergage thus : 
 $$TBV_i = DGE_i + IGE_i$$
+But in our case, each plant has 8 neighbours so
+$$TBV_i = DGE_i + 8IGE_i$$
 
 It is an important metric for predicting the genetic value of the next generation, particularly when social interactions are considered. 
 We propose here to estimate the values using the data.
