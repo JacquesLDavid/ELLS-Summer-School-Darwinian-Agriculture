@@ -327,6 +327,15 @@ server <- function(input, output) {
     N_sim=input$N_sim
     N_row=N_col=0
     
+    if((V_voisin==0)&(V_env_IGE==0)){
+      V_env_IGE=10^-6
+    }
+    
+    if((V_geno==0)&(V_env_DGE==0)){
+      V_env_DGE=10^-6
+    }
+    
+    
     c=0
     if (ceiling(sqrt(N_geno*N_rep))!=sqrt(N_geno*N_rep)){
       N_row=N_col=ceiling(sqrt(N_geno*N_rep))
@@ -590,9 +599,9 @@ server <- function(input, output) {
     
     
     TABLE_TRUE_sel_I <- data.frame(
-      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno"),
-      "Variance" = c(var(DGE_sel_I), var(IGE_sel_I), cov(DGE_sel_I,IGE_sel_I),var(Pheno_sel_I)),
-      "Mean"=c(mean(DGE_sel_I),mean(IGE_sel_I),NA,mean(Pheno_sel_I))
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno","Gain"),
+      "Variance" = c(var(DGE_sel_I), var(IGE_sel_I), cov(DGE_sel_I,IGE_sel_I),var(Pheno_sel_I),NA),
+      "Mean"=c(mean(DGE_sel_I),mean(IGE_sel_I),NA,mean(Pheno_sel_I),(mean(Pheno_sel_I)-mean(Pheno)))
     )
     
     output$table_True_sel_IOutput <- renderTable({
@@ -704,9 +713,9 @@ server <- function(input, output) {
     })
     
     TABLE_TRUE_sel <- data.frame(
-      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno"),
-      "Variance" = c(var(DGE_sel), var(IGE_sel), cov(DGE_sel,IGE_sel),var(Pheno_sel)),
-      "Mean"=c(mean(DGE_sel),mean(IGE_sel),NA,mean(Pheno_sel))
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno","Gain"),
+      "Variance" = c(var(DGE_sel), var(IGE_sel), cov(DGE_sel,IGE_sel),var(Pheno_sel),NA),
+      "Mean"=c(mean(DGE_sel),mean(IGE_sel),NA,mean(Pheno_sel),(mean(Pheno_sel)-mean(Pheno)))
     )
     
     output$table_True_selOutput <- renderTable({
