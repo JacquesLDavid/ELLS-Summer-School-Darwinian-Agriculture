@@ -126,7 +126,11 @@ ui <- fluidPage(
                                div(class = "table-container",
                                    tableOutput("table_True_sel_IOutput")
                                ),
-                               
+                               br(),
+                               h3("Phenotypic gain"),
+                               div(class = "table-container",
+                                   tableOutput("TABLE_gain")
+                               ),
                            ),
                            
                   )
@@ -597,17 +601,6 @@ server <- function(input, output) {
         annotate("text",x=mean_after_sel_I+1.5,y=0.3,label=paste0('Delta_mu_pheno = ', mean_after_sel_I - mean_before_sel_I))# Remove the legend title
     })
     
-    
-    TABLE_TRUE_sel_I <- data.frame(
-      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno","Gain"),
-      "Variance" = c(var(DGE_sel_I), var(IGE_sel_I), cov(DGE_sel_I,IGE_sel_I),var(Pheno_sel_I),NA),
-      "Mean"=c(mean(DGE_sel_I),mean(IGE_sel_I),NA,mean(Pheno_sel_I),(mean(Pheno_sel_I)-mean(Pheno)))
-    )
-    
-    output$table_True_sel_IOutput <- renderTable({
-      TABLE_TRUE_sel_I
-    })
-    
     ###Mass selection
     
     # Selected individuals
@@ -712,6 +705,17 @@ server <- function(input, output) {
       
     })
     
+    
+    TABLE_TRUE_sel_I <- data.frame(
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno","Gain"),
+      "Variance" = c(var(DGE_sel_I), var(IGE_sel_I), cov(DGE_sel_I,IGE_sel_I),var(Pheno_sel_I),NA),
+      "Mean"=c(mean(DGE_sel_I),mean(IGE_sel_I),NA,mean(Pheno_sel_I),(mean(Pheno_sel_I)-mean(Pheno)))
+    )
+    
+    output$table_True_sel_IOutput <- renderTable({
+      TABLE_TRUE_sel_I
+    })
+    
     TABLE_TRUE_sel <- data.frame(
       "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno","Gain"),
       "Variance" = c(var(DGE_sel), var(IGE_sel), cov(DGE_sel,IGE_sel),var(Pheno_sel),NA),
@@ -720,6 +724,15 @@ server <- function(input, output) {
     
     output$table_True_selOutput <- renderTable({
       TABLE_TRUE_sel
+    })
+    
+    TABLE_gain=data.frame(
+      "Selection_type"=c("Mass selection","Index selection"),
+      "Gain"=c((mean(Pheno_sel)-mean(Pheno)),(mean(Pheno_sel_I)-mean(Pheno)))
+    )
+    
+    output$TABLE_gain <- renderTable({
+      TABLE_gain
     })
     
   })
