@@ -132,12 +132,22 @@ The true breeding value of a genotype, TBV integrates both its DGE and IGE. In m
 $$TBV_i = DGE_i + IGE_i$$
 But in our case, each plant has 8 neighbours so
 $$TBV_i = DGE_i + 8IGE_i$$
+This leads to the variance of TBV :
+$$\begin{split}
+V(TBV)&=V(DGE_i + 8IGE_i)
+\\&=V(DGE) + 8*8\,V(IGE) + 2*8\,cov(DGE:IGE)
+\\&=V(DGE) + 64\,V(IGE) + 16\,cov(DGE:IGE)
+\end{split}$$  
 
-It is an important metric for predicting the genetic value of the next generation, particularly when social interactions are considered. 
-We propose here to estimate the values using the data.
+An alternative heritability measure $T^2$ is defined as the proportion of the total phenotypic variance attributable to the variance of the total breeding value:
+$$T^2 = \frac{V(TBV)}{V_P}$$
+with $V(P)=V(TBV)+V(E)$
 
-### BLUPs of DGE's and IGE's
-We will use the $SOMMER$ package to get Best Linear Unbiased Prediction (BLUP) of DGE and IGE of each genotype present and repeated in the simulated population. 
+$T^2$ is an important metric for predicting the genetic value of the next generation, particularly when social interactions are considered. Since the $cov(DGE:IGE)$ can be negative, $T^2$ can diminish compared to the classical $H^2$.
+
+
+### BLUPs of DGE's and IGE's  
+We propose here to estimate the values using the dat with the $SOMMER$ package. We can thus get Best Linear Unbiased Prediction (BLUP) of DGE and IGE of each genotype present and repeated in the simulated population. 
 
 **For motivated students**, here's the call to the mmer function in the SOMMER package. Pheno is the phenotype, Focal is the occurence matrix containing the focal genotype, Zv is the neighborhood matrix. 
 
