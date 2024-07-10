@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 if(!requireNamespace("MASS", quietly = TRUE)){ install.packages("MASS")}
 library(MASS)
 ```
+---
 
 # 1. Introduction
 Welcome to this practical session on the decomposition of phenotypic value and the effects of the efficiency of selection. In this session, we will explore how the phenotypic value of a plant can be influenced by its genotype and also by the genotypes of its neighbors, and how selection on these traits affects the performance of the next generation.  
@@ -28,7 +29,7 @@ The selection can be made either by selecting the best performing phenotypes or 
 
 # 2. Key theoretical Concepts
 
-## Decomposition of the Phenotypic Value
+## 2.1 Decomposition of the Phenotypic Value
 Classically, in one single macro-environment, the phenotypic value ($P$) of an individual can be decomposed into two components:
 $$ P = G + E $$  
 Where:  
@@ -37,11 +38,11 @@ Where:
 
 Let's rigorously derive the total phenotypic variance $V_P$ where the phenotypes may not be independent, either because of genetic relatedness or structured environment such as neigborhoods.
 
-##  Independent data 
+## 2.2  Independent data 
 Consider the phenotypes $P_i$ and $P_i'$ of two a individuals $i$ and $i'$.
 In the general case, $V(P)= E(Var(Pi)) + 2 cov(P_i,P_{i'})$ and if genotypes are independent and if there is a random distribution of individuals in a homogeneous environementn then $cov(P_i,P_{i'})=0$ and $V(P) = V(G) + V(E)$. 
 
-## Phenotypic variance in a complex neighbourhood : Genetic effects of interacting plants
+## 2.3 Phenotypic variance in a complex neighbourhood : Genetic effects of interacting plants
 
 The general formula $V(P)= E(Var(Pi)) + 2 cov(P_i,P_{i'})$ has to be reconsidered since in our workshop situation, we consider that plants are grown on a grid and any of them have 8 neighbours with which it is interacting. 
 
@@ -101,7 +102,7 @@ plot(data[,1], data[,2], xlab = "DGE", ylab="IGE", cex=0.5, main="Case C")
 ```
 
 
-### Phenotypic values and variance with neighborhoods
+## 2.4 Phenotypic values and variance with neighborhoods
 $P_i$ has to be written according to its 8 neighbors.  
   
 $$ \begin{split}
@@ -125,7 +126,7 @@ If you detect important deviation to the classical case, then it may be of impor
 
 We won't go into all the theoretical developments here. For more details, see Bourke's course and the papers cited at the end of these documents. 
 
-## True Breeding Value (TBV)
+## 2.5 True Breeding Value (TBV)
 ### Definition
 The true breeding value of a genotype, TBV integrates both its DGE and IGE.
 $$TBV_i = DGE_i + IGE_i$$
@@ -161,9 +162,9 @@ You can expect that a selection based on this index will result in a different c
 
 You will thus be able to compare mass selection with a selection in which you have BLUPs of DGE and IGE of each genotype. You could choose which term to maximise using the value of 
 
-# 3.Simulated populations and selection
+# 3. Simulated populations and selection
 
-## Algorithm
+## 3.1 Algorithm
 The simulation algorithm used in this practical session involves the following steps:
 
 1. **Matrix Preparation**: Genetic (G) and environmental (E) variance-covariance matrices are prepared based on user inputs.
@@ -176,7 +177,7 @@ The simulation algorithm used in this practical session involves the following s
 
 By understanding these steps and using the Shiny application, you will gain insights into the dynamics of genetic selection and the impact of social interactions on breeding outcomes.
 
-## Shiny Application Instructions
+## 3.2 Shiny Application Instructions
 ### Build the population
 To use the Shiny application for this practical session, follow these steps:
 
@@ -192,7 +193,7 @@ If you want to reproduce exactly the same results another time, tick "Set seed f
 
 In the first result panel, graphs will appear permitting to discover the realised properties the population according to the parameters values you have chosen.
 
-### Breed !
+### Breeding
 5. Set the selection pressure to determine the proportion of top-performing plants to be selected.
 6. Choose the value of the selection index, the relative weigth of DGE to the IGE
 7. **click the Blue button ** 2.Breed. You can modify the parameters of selection without rebuilding a population. 
@@ -202,15 +203,45 @@ You get two main graphs, one using Mass selection on direct phenotypic values an
 
 The summary tab provide a number of stats allowing you to compare the efficiency on your selection processes. 
 
-# Explore different situations 
+# 4.Explore different situations 
 
 Once you have understood the functionning of the Shiny app, group by 3 students and start discussing. 
 
-## Classical modeling
+## 4.1 Classical modeling
 What would be the values of the different parameters that are representative of a classical situation : no social interaction 
 
-## Understanding the impact of social genetics
-Observe how changes in these parameters affect the selection outcomes and the predicted genetic values of the next generation.
-Set a grid of values of the parameters to explore neatly your scenario. 
+## 4.2 Understanding the impact of social genetics
 
-## Prepare a report of your main findings
+To explore the impact of social genetic interactions on selection outcomes and the predicted genetic values of the next generation, follow these detailed steps:
+
+1. **Set Up Basic Parameters**:
+   - **Initial Population**: Define the initial population size. Ensure that the total population size multiplied by the number of replicates does not exceed 1000 for faster calculations.
+   Distribute your plots between the number of genotypes and the number of repeats
+   
+   - **Genetic Variances**:
+     - **Direct Genetic Effect (DGE)**: Adjust the genetic variance for direct effects
+     - **Indirect Genetic Effect (IGE)**: Adjust the genetic variance for indirect effects.
+     - **Genetic Correlation**: explore the effect of the genetic correlation between DGE and IGE.
+   - **Environmental Variances**: Define the environmental variances for both direct and indirect effects.
+
+2. **Explore Different Scenarios**:
+   - **Parameter Grid**: Create a grid of parameter values to explore different scenarios. This involves varying the values of DGE, IGE, their correlation, and environmental variances systematically.
+  
+   - **Systematic Variation**: By changing one parameter at a time while keeping others constant, you can isolate the effects of each parameter. Alternatively, you can change multiple parameters simultaneously to see combined effects.
+
+3. **Run Simulations**:
+   - **Initial Run**: Conduct an initial run with a baseline set of parameters to establish a reference point.
+   - **Subsequent sel**: For each set of parameters in your grid, run the simulation and record the outcomes. 
+
+4. **Analyze Results**:
+   - **Selection Outcomes**: Observe how the changes in parameters affect the selection outcomes. Look for patterns in the performance of selected individuals.
+   - **Predicted Genetic Values**: Examine the predicted genetic values of the next generation under different scenarios.
+   - **Comparative Analysis**: Compare results across different runs to identify which parameters have the most significant impact on selection outcomes and genetic values.
+
+5. **Report Findings**:
+   - **Document Observations**: Keep detailed notes on the results of each simulation, highlighting any notable trends or unexpected results.
+   - **Graphs and Tables**: Use graphs and tables to visualize the data and make comparisons easier to understand.
+   - **Summary**: Summarize your findings, discussing how different parameters influence the selection process and the genetic improvement of the population.
+
+By following these steps, you will gain a deeper understanding of how social genetic interactions affect breeding outcomes and be better equipped to make informed decisions in practical breeding programs.
+
