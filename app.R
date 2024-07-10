@@ -1,3 +1,12 @@
+# authors Jacques David, Nicolas Salas
+# date : July 10th 2024
+# Why : ELLS Summer school Darwinian Agriculture
+# Still to be bone 
+# Why is it so long ?
+# Add the genetic advance in the summary
+
+
+
 library(shiny)
 
 # Load the necessary packages
