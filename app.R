@@ -68,7 +68,7 @@ ui <- fluidPage(
       tags$hr(),
       p("SELECTION"),
       sliderInput("p", "Selection pressure", min = 0.01, max = 1, value = 0.5, step = 0.1),          
-      sliderInput("b_DGE", "Selectin index : Weigth on DGE (IGE =1-DGE)", min = -1, max = 1, value = 0.5, step = 0.1),
+      sliderInput("b_DGE", "Selection index : Weight on DGE (IGE =1-DGE)", min = -1, max = 1, value = 0.5, step = 0.1),
       div(style = "text-align: center;",
           actionButton("SelButton",
                        label = div(style = "color: blue; font-weight: bold;", "Step 2. Breed !"))
