@@ -360,10 +360,14 @@ server <- function(input, output) {
     SIM_DGE=c()
     SIM_IGE=c()
     SIM_cov=c()
+    SIM_ENV_DGE=c()
+    SIM_ENV_IGE=c()
     
     SIM_mean <- c()
     SIM_mean_DGE=c()
     SIM_mean_IGE=c()
+    SIM_mean_ENV_DGE=c()
+    SIM_mean_ENV_IGE=c()
     
     # Pré-allocation
     mu <- c(0, 0)
@@ -441,16 +445,21 @@ server <- function(input, output) {
       SIM_cov=c(SIM_cov,cov(DGE,IGE))
       SIM_DGE=c(SIM_DGE,var(DGE))
       SIM_IGE=c(SIM_IGE,var(IGE))
+      SIM_ENV_DGE=c(SIM_ENV_DGE,var(df_E[,1]))
+      SIM_ENV_IGE=c(SIM_ENV_IGE,var(df_E[,2]))
       
       SIM_mean <- c(SIM_mean,mean(Pheno))
       SIM_mean_DGE=c(SIM_mean_DGE,mean(DGE))
       SIM_mean_IGE=c(SIM_mean_IGE,mean(IGE))
+      SIM_mean_ENV_DGE=c(SIM_mean_ENV_DGE,mean(df_E[,1]))
+      SIM_mean_ENV_IGE=c(SIM_mean_ENV_IGE,mean(df_E[,2]))
+      
     }
     
     TABLE_TRUE <- data.frame(
-      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno"),
-      "Variance" = c(mean(SIM_DGE), mean(SIM_IGE), mean(SIM_cov),mean(SIM)),
-      "Mean"=c(mean(SIM_mean_DGE),mean(SIM_mean_IGE),NA,mean(SIM_mean))
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE","Env_DGE","Env_IGE", "Pheno"),
+      "Variance" = c(mean(SIM_DGE), mean(SIM_IGE), mean(SIM_cov),mean(SIM_ENV_DGE),mean(SIM_ENV_IGE),mean(SIM)),
+      "Mean"=c(mean(SIM_mean_DGE),mean(SIM_mean_IGE),NA,mean(SIM_mean_ENV_DGE),mean(SIM_mean_ENV_IGE),mean(SIM_mean))
     )
     
     output$table_TrueOutput <- renderTable({
