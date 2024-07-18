@@ -257,3 +257,6 @@ To explore the impact of social genetic interactions on selection outcomes and t
 
 By following these steps, you will gain a deeper understanding of how social genetic interactions affect breeding outcomes and be better equipped to make informed decisions in practical breeding programs.
 
+# 5.References
+
+Piter Bijma, William M Muir, Esther D Ellen, Jason B Wolf, Johan A M Van Arendonk, Multilevel Selection 2: Estimating the Genetic Parameters Determining Inheritance and Response to Selection, Genetics, Volume 175, Issue 1, 1 January 2007, Pages 289–299, https://doi.org/10.1534/genetics.106.062729
