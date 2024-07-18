@@ -5,8 +5,6 @@
 # Why is it so long ?
 # Add the genetic advance in the summary
 
-
-
 library(shiny)
 
 # Load the necessary packages
@@ -534,6 +532,7 @@ server <- function(input, output) {
     assign("Pheno", Pheno, envir = globalenv())
     assign("Zg",Zg,globalenv())
     assign("Zv", Zv, envir = globalenv())
+    assign("out_data_pheno",out_data_pheno,globalenv())
     
     output$corrplot=renderPlot({
       corrplot::corrplot(cor(data.frame("TRUE_DGE"=DGE,"TRUE_IGE"=IGE,"PRED_DGE"=pred$DGE_pred,"PRED_IGE"=pred$IGE_pred)),type = "lower",addCoef.col = "black")
