@@ -18,6 +18,8 @@ if(!requireNamespace("data.table", quietly = TRUE)){ install.packages("data.tabl
 if(!requireNamespace("shinycssloaders", quietly = TRUE)){ install.packages("shinycssloaders")}
 if(!requireNamespace("schoolmath", quietly = TRUE)){ install.packages("schoolmath")}
 if(!requireNamespace("corrplot", quietly = TRUE)){ install.packages("corrplot")}
+if(!requireNamespace("ggpubr", quietly = TRUE)){ install.packages("ggpubr")}
+
 
 library(MASS) # For mvrnorm
 library(ggplot2) # For plots
@@ -26,6 +28,8 @@ library(data.table)
 library(tidyverse)
 library(shinycssloaders)
 library(corrplot)
+library(ggpubr)
+
 
 
 
@@ -43,22 +47,22 @@ ui <- fluidPage(
   titlePanel("Population Evolution Simulation"),
   sidebarLayout(
     sidebarPanel(
-		p("GENERAL PARAMETERS:"),
+      p("GENERAL PARAMETERS:"),
       checkboxInput("setSeed", "Set seed for reproducibility", value = FALSE),
       numericInput("seedValue", "Seed value", value = 12345),
-      checkboxInput("Mean","Mean effects (checked) or Sum effects (unchecked) for IGE calculation", value=FALSE),
-      checkboxInput("Asreml","Use of Asreml to make inference", value=FALSE),
-		  checkboxInput("is.spherical","'Spherical' neighbordhood or 'flat' neighborhood", value=TRUE),
-	  p("Make the product of N x Rep reasonably close to 1000 at the maximum"),
+      #checkboxInput("Mean","Mean effects (checked) or Sum effects (unchecked) for IGE calculation", value=FALSE),
+      #checkboxInput("Asreml","Use of Asreml to make inference", value=FALSE),
+      #checkboxInput("is.spherical","'Spherical' neighbordhood or 'flat' neighborhood", value=TRUE),
+      p("Make the product of N x Rep reasonably close to 1000 at the maximum"),
       sliderInput("N", "Number of genotypes (N)", min = 10, max = 500, value = 50),
       sliderInput("rep", "Number of rep per genotype  (rep)", min = 1, max = 100, value = 2),
       sliderInput("N_sim", "Number of simulations  (N_sim)", min = 1, max = 100, value = 1),
-	  tags$hr(),
+      tags$hr(),
       p("GENETIC VARIANCES:"),
       numericInput("varG11", "Genetic variance DGE", value = 1),
       numericInput("varG22", "Genetic variance IGE", value = 0.125),
       sliderInput("r", "Genetic correlation DGE : IGE", min = -1, max = 1, value = 0, step = 0.1),
-	  tags$hr(),
+      tags$hr(),
       p("ENVIRONMENTAL VARIANCES:"),
       numericInput("varE11", "Environmental variance DGE", value = 1),
       numericInput("varE22", "Environmental variance IGE", value = 0.125),
@@ -72,7 +76,9 @@ ui <- fluidPage(
       div(style = "text-align: center;",
           actionButton("SelButton",
                        label = div(style = "color: blue; font-weight: bold;", "Step 2. Breed !"))
-      )
+      ),
+      textInput("PNGfilename",label = "PNG filename",value = "output_plot"),
+      textInput("CSVfilename",label = "CSV filename",value = "output_data"),
     ),
     mainPanel(
       tabsetPanel(type = "tabs",
@@ -101,6 +107,7 @@ ui <- fluidPage(
                            tags$hr(),
                            p("Genetic advance on phenotypic values under DGEvsIGE index selection "),
                            plotOutput("plotIndex_Selection"),
+                           downloadButton("makePNG",label = "Export plot")
                   ),
                   tabPanel("Summary",
                            div(style = "text-align: center;",
@@ -131,6 +138,7 @@ ui <- fluidPage(
                                div(class = "table-container",
                                    tableOutput("TABLE_gain")
                                ),
+                               downloadButton("exportData",label = "Export data"),
                            ),
                            
                   )
@@ -282,7 +290,6 @@ server <- function(input, output) {
   }
   assign("voisin_fct",voisin_fct,globalenv())
   assign("voisin_fct_sans_recollage",voisin_fct_sans_recollage,globalenv())
-  
   observeEvent(input$goButton, {
     output$plotTRUE_DGE_IGE<-renderPlot(ggplot())
     output$plotTRUEvsPRED_DGE<-renderPlot(ggplot())
@@ -291,15 +298,16 @@ server <- function(input, output) {
     output$plotMass_differential<-renderPlot(ggplot())
     output$plotMass_Selection<-renderPlot(ggplot())
     output$plotIndex_Selection<-renderPlot(ggplot())
-    is.spherical=input$is.spherical
+    #is.spherical=input$is.spherical
     if(input$setSeed) {
       set.seed(input$seedValue)
     }
     
-    Asreml=input$Asreml
-    Mean=input$Mean
-    # Asreml=FALSE
-    # Mean=FALSE
+    # Asreml=input$Asreml
+    # Mean=input$Mean
+    Asreml=FALSE
+    Mean=FALSE
+    is.spherical=TRUE
     if(Asreml){
       library(asreml)
       asreml.options(workspace="2gb",maxit=5,ai.sing=TRUE)
@@ -319,6 +327,7 @@ server <- function(input, output) {
     # N_rep=2
     # b_DGE=0.5
     # p=0.1
+    # N_sim=1
     
     V_env_DGE=input$varE11
     V_env_IGE=input$varE22
@@ -388,12 +397,7 @@ server <- function(input, output) {
       
       df <- mvrnorm(n = N_geno, mu, G)
       colnames(df) <- c("DGE", "IGE")
-      
-      output$plotTRUE_DGE_IGE=renderPlot({ggplot(df,aes(DGE,IGE))+
-        geom_point()+
-        labs(x="TRUE DGE",y="TRUE IGE")+
-        theme_minimal()
-      })
+
       df_E <- mvrnorm(n = (N_geno * N_rep), mu, E)
       assign("df_E",df_E,globalenv())
       
@@ -465,6 +469,10 @@ server <- function(input, output) {
     output$table_TrueOutput <- renderTable({
       TABLE_TRUE
     })
+    
+    out_data_pheno=pivot_wider(TABLE_TRUE,values_from = c(2:3),names_from = 1)
+    rownames(out_data_pheno)="Before selection"
+    
     # mass phenotypic selection
     DATA$Pheno <- as.vector(Pheno)
     DATA$Focal <- as.factor(DATA$Focal)
@@ -498,22 +506,28 @@ server <- function(input, output) {
       }
     }
     
+    output$plotTRUE_DGE_IGE=renderPlot({ggplot(df,aes(DGE,IGE))+
+        geom_point()+
+        labs(x="TRUE DGE",y="TRUE IGE")+
+        theme_minimal()
+    })
+    
     output$plotTRUE_DGE_PRED_DGE=renderPlot({ggplot(df,aes(x=DGE,y=pred$DGE_pred))+
-      geom_point()+
-      labs(x="TRUE DGE",y="PRED DGE")+
-      theme_minimal()
+        geom_point()+
+        labs(x="TRUE DGE",y="PRED DGE")+
+        theme_minimal()
     })
     
     output$plotTRUE_IGE_PRED_IGE=renderPlot({ggplot(df,aes(x=IGE,y=pred$IGE_pred))+
-      geom_point()+
-      labs(x="TRUE IGE",y="PRED IGE")+
-      theme_minimal()
-  })
+        geom_point()+
+        labs(x="TRUE IGE",y="PRED IGE")+
+        theme_minimal()
+    })
     output$plotPRED_DGE_IGE=renderPlot({ggplot(pred,aes(x=IGE_pred,y=DGE_pred))+
-      geom_point()+
-      labs(x="PRED IGE",y="PRED DGE")+
-      theme_minimal()
-})
+        geom_point()+
+        labs(x="PRED IGE",y="PRED DGE")+
+        theme_minimal()
+    })
     assign("pred",pred,globalenv())
     assign("DATA", DATA, envir = globalenv())
     assign("N_geno", N_geno, envir = globalenv())
@@ -597,17 +611,19 @@ server <- function(input, output) {
     mean_before_sel_I=round(mean(combinedData_I[combinedData_I$Phase=="Before selection","Value"]),2)
     mean_after_sel_I=round(mean(combinedData_I[combinedData_I$Phase=="After selection","Value"]),2)
     
+    plotIndex_Selection=ggplot(combinedData_I, aes(x = Value, fill = Phase)) +
+      geom_density(alpha = 0.5, adjust = 1.5) +
+      geom_vline(aes(xintercept=mean_before_sel_I),color="blue",size=1)+
+      geom_vline(aes(xintercept=mean_after_sel_I),color="red",size=1)+# Adjustment for smoothing, 'adjust' controls the smoothing
+      scale_fill_manual(values = c("Before selection" = "blue", "After selection" = "red")) +
+      labs(x = "Phenotypic Value", y = "Density", title = "Index selection") +
+      theme_minimal() +
+      theme(legend.title = element_blank())+
+      xlim(-5*var(Pheno),+5*var(Pheno))+
+      annotate("text",x=mean_after_sel_I+1.5,y=0.3,label=paste0('Delta_mu_pheno = ', mean_after_sel_I - mean_before_sel_I))# Remove the legend title
+    
     output$plotIndex_Selection <- renderPlot({
-      ggplot(combinedData_I, aes(x = Value, fill = Phase)) +
-        geom_density(alpha = 0.5, adjust = 1.5) +
-        geom_vline(aes(xintercept=mean_before_sel_I),color="blue",size=1)+
-        geom_vline(aes(xintercept=mean_after_sel_I),color="red",size=1)+# Adjustment for smoothing, 'adjust' controls the smoothing
-        scale_fill_manual(values = c("Before selection" = "blue", "After selection" = "red")) +
-        labs(x = "Phenotypic Value", y = "Density", title = "Index selection") +
-        theme_minimal() +
-        theme(legend.title = element_blank())+
-        xlim(-5*var(Pheno),+5*var(Pheno))+
-        annotate("text",x=mean_after_sel_I+1.5,y=0.3,label=paste0('Delta_mu_pheno = ', mean_after_sel_I - mean_before_sel_I))# Remove the legend title
+      plotIndex_Selection
     })
     
     ###Mass selection
@@ -649,7 +665,7 @@ server <- function(input, output) {
     Focal_sel <- sprintf("G%03d", 1:N_geno)
     rep_sel <- sprintf("%03d", 1:N_rep)
     grid <- expand.grid(Row = 1:N_row, Column = 1:N_col)
-
+    
     
     df_sel=mvrnorm(N_geno,mus,G)
     colnames(df_sel)=c("DGE","IGE")
@@ -692,7 +708,7 @@ server <- function(input, output) {
     
     Pheno_sel <- Zg_sel %*% DGE_sel + Zv_sel %*% IGE_sel + df_E_sel[, 1] + df_E_sel[, 2]
     
-   
+    
     # Combine the two vectors into a dataframe
     combinedData <- rbind(data.frame(Value = Pheno, Phase = "Before selection"),
                           data.frame(Value = Pheno_sel, Phase = "After selection"))
@@ -700,40 +716,49 @@ server <- function(input, output) {
     mean_before_sel=round(mean(combinedData[combinedData$Phase=="Before selection","Value"]),2)
     mean_after_sel=round(mean(combinedData[combinedData$Phase=="After selection","Value"]),2)
     
+    plotMass_Selection= ggplot(combinedData, aes(x = Value, fill = Phase)) +
+      geom_density(alpha = 0.5, adjust = 1.5) +
+      geom_vline(aes(xintercept=mean_before_sel),color="blue",size=1)+
+      geom_vline(aes(xintercept=mean_after_sel),color="red",size=1)+# Adjustment for smoothing, 'adjust' controls the smoothing
+      scale_fill_manual(values = c("Before selection" = "blue", "After selection" = "red")) +
+      labs(x = "Phenotypic Value", y = "Density", title = "Phenotypic mass selection") +
+      theme_minimal() +
+      xlim(-5*var(Pheno),+5*var(Pheno))+
+      theme(legend.title = element_blank())+# Remove the legend title
+      annotate("text",x=mean_after_sel+1.5,y=0.3,label=paste0('Delta_mu_pheno = ', mean_after_sel - mean_before_sel))# Remove the legend title
+    
+    
     output$plotMass_Selection <- renderPlot({
-      ggplot(combinedData, aes(x = Value, fill = Phase)) +
-        geom_density(alpha = 0.5, adjust = 1.5) +
-        geom_vline(aes(xintercept=mean_before_sel),color="blue",size=1)+
-        geom_vline(aes(xintercept=mean_after_sel),color="red",size=1)+# Adjustment for smoothing, 'adjust' controls the smoothing
-        scale_fill_manual(values = c("Before selection" = "blue", "After selection" = "red")) +
-        labs(x = "Phenotypic Value", y = "Density", title = "Phenotypic mass selection") +
-        theme_minimal() +
-        xlim(-5*var(Pheno),+5*var(Pheno))+
-        theme(legend.title = element_blank())+# Remove the legend title
-        annotate("text",x=mean_after_sel+1.5,y=0.3,label=paste0('Delta_mu_pheno = ', mean_after_sel - mean_before_sel))# Remove the legend title
-      
+      plotMass_Selection
     })
     
     
     TABLE_TRUE_sel_I <- data.frame(
-      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno"),
-      "Variance" = c(var(DGE_sel_I), var(IGE_sel_I), cov(DGE_sel_I,IGE_sel_I),var(Pheno_sel_I)),
-      "Mean"=c(mean(DGE_sel_I),mean(IGE_sel_I),NA,mean(Pheno_sel_I))
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Env_DGE","Env_IGE","Pheno"),
+      "Variance" = c(var(DGE_sel_I), var(IGE_sel_I), cov(DGE_sel_I,IGE_sel_I),var(df_E_sel_I[,1]),var(df_E_sel_I[,2]),var(Pheno_sel_I)),
+      "Mean"=c(mean(DGE_sel_I),mean(IGE_sel_I),NA,mean(df_E_sel_I[,1]),mean(df_E_sel_I[,2]),mean(Pheno_sel_I))
     )
     
     output$table_True_sel_IOutput <- renderTable({
       TABLE_TRUE_sel_I
     })
     
+    out_data_sel_I<-pivot_wider(TABLE_TRUE_sel_I,values_from = c(2:3),names_from = 1)
+    rownames(out_data_sel_I)="After index selection"
+    
+    
     TABLE_TRUE_sel <- data.frame(
-      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Pheno"),
-      "Variance" = c(var(DGE_sel), var(IGE_sel), cov(DGE_sel,IGE_sel),var(Pheno_sel)),
-      "Mean"=c(mean(DGE_sel),mean(IGE_sel),NA,mean(Pheno_sel))
+      "Effect" = c("DGE", "IGE","Cov_DGE_IGE", "Env_DGE","Env_IGE","Pheno"),
+      "Variance" = c(var(DGE_sel), var(IGE_sel), cov(DGE_sel,IGE_sel),var(df_E_sel[,1]),var(df_E_sel[,2]),var(Pheno_sel)),
+      "Mean"=c(mean(DGE_sel),mean(IGE_sel),NA,mean(df_E_sel[,1]),mean(df_E_sel[,2]),mean(Pheno_sel))
     )
     
     output$table_True_selOutput <- renderTable({
       TABLE_TRUE_sel
     })
+    
+    out_data_sel<-pivot_wider(TABLE_TRUE_sel,values_from = c(2:3),names_from = 1)
+    rownames(out_data_sel)="After mass selection"
     
     TABLE_gain=data.frame(
       "Selection_type"=c("Mass selection","Index selection"),
@@ -744,6 +769,22 @@ server <- function(input, output) {
       TABLE_gain
     })
     
+    outdata=rbind(out_data_pheno,out_data_sel,out_data_sel_I)
+    
+    output$exportData <- downloadHandler(filename = paste0(input$CSVfilename,".csv"),
+                                         content = function(file){
+                                           write.csv(x = outdata, file = file)
+                                         },
+                                         contentType = "text/csv") 
+    
+    plot_combined=ggarrange(plotMass_Selection,plotIndex_Selection,ncol = 1,nrow = 2)
+    output$makePNG <- downloadHandler(filename = paste0(input$PNGfilename,".png"),
+                                      content = function(file){
+                                        png(filename = file, width = 3500, height = 3500, res = 400)
+                                        print(plot_combined)
+                                        dev.off()
+                                      },
+                                      contentType = "image/png")
   })
   
 }
